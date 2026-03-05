@@ -1,0 +1,55 @@
+{% extends "cis/base.html" %}
+
+{% load crispy_forms_tags %}
+
+{% block title %}Create {{ MYCE_SETTINGS.site_name }} Account{% endblock %}
+{% block body %}
+
+<main role="main" id="content">
+    <div class="container bg-light pt-3">
+        <div class="row">
+            {% if messages %}
+            <div class="col-md-12">
+                <ul class="messages list-group">
+                    {% for message in messages %}
+                    <li{% if message.tags %} class="list-group-item {{ message.tags }}" {% endif %}>
+                        {{ message }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            {% if signup_intro %}
+            <div class="col-12">
+                {{signup_intro|safe}}
+            </div>
+            {% endif %}
+
+            <div class="col-md-9">
+                {% if form.errors %}
+                <p class="alert alert-danger">Please correct the errors in the form below and try again.</p>
+                {% endif %}
+
+                {% if accepting_applications %}
+                <form action="" method="post">
+                    {% csrf_token %}
+                    {{ form | crispy }}
+                    <input type="submit" value="Continue" name="submit_create_application"
+                        class="btn btn-primary" />
+                    <br>
+                    <span>A verification email will be sent to the address you provide.</span>
+                </form>
+
+                {% else %}
+                {{closed_message|safe}}
+                {% endif %}
+
+            </div>
+
+            <div class="col-md-3">
+                <p class="alert alert-info">* required items</p>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}

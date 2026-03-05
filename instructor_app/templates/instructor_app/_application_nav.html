@@ -1,0 +1,79 @@
+{% load instructor_app_tags %}
+
+<style>
+.step-nav {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1rem 0;
+    overflow: hidden;
+}
+.step-nav li {
+    flex: 1;
+    margin: 0;
+    padding: 0;
+}
+.step-nav li a {
+    display: block;
+    position: relative;
+    padding: 10px 10px 10px 30px;
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-decoration: none;
+    color: #666;
+    background: #e9ecef;
+    clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 50%, calc(100% - 15px) 100%, 0 100%, 15px 50%);
+    transition: background 0.2s, color 0.2s;
+    white-space: nowrap;
+}
+.step-nav li:first-child a {
+    padding-left: 15px;
+    clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 50%, calc(100% - 15px) 100%, 0 100%);
+}
+.step-nav li a:hover {
+    text-decoration: none;
+    filter: brightness(0.9);
+}
+.step-nav li.step-completed a {
+    background: #bb0524;
+    color: #fff;
+}
+.step-nav li.step-active a {
+    background: #05233d;
+    color: #fff;
+}
+.step-nav li.step-upcoming a {
+    background: #dee2e6;
+    color: #888;
+}
+@media (max-width: 576px) {
+    .step-nav li a {
+        font-size: 0.7rem;
+        padding: 8px 5px 8px 20px;
+    }
+    .step-nav li:first-child a {
+        padding-left: 8px;
+    }
+}
+</style>
+
+{% active_step_number active_step as current_step %}
+
+<ul class="step-nav">
+    <li class="{% if current_step == 1 %}step-active{% elif current_step > 1 %}step-completed{% else %}step-upcoming{% endif %}">
+        <a href="{% url 'applicant_app:manage_courses' teacher_application.id %}">Select Course(s)</a>
+    </li>
+    <li class="{% if current_step == 2 %}step-active{% elif current_step > 2 %}step-completed{% else %}step-upcoming{% endif %}">
+        <a href="{% url 'applicant_app:manage_recommendation' teacher_application.id %}">Manage Recommendation</a>
+    </li>
+    <li class="{% if current_step == 3 %}step-active{% elif current_step > 3 %}step-completed{% else %}step-upcoming{% endif %}">
+        <a href="{% url 'applicant_app:manage_ed_bg' teacher_application.id %}">Manage Ed. Background</a>
+    </li>
+    <li class="{% if current_step == 4 %}step-active{% elif current_step > 4 %}step-completed{% else %}step-upcoming{% endif %}">
+        <a href="{% url 'applicant_app:manage_uploads' teacher_application.id %}">Upload Materials</a>
+    </li>
+    <li class="{% if current_step == 5 %}step-active{% elif current_step > 5 %}step-completed{% else %}step-upcoming{% endif %}">
+        <a href="{% url 'applicant_app:review_application' teacher_application.id %}">Review & Submit</a>
+    </li>
+</ul>

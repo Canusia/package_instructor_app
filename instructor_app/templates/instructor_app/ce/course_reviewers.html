@@ -1,0 +1,46 @@
+{% load templatehelpers %}
+{% load crispy_forms_tags %}
+
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <td>Assigned On</td>
+            <td>Reviewer</td>
+            <td>Recommendation</td>
+            <td>Comment</td>
+            <td></td>
+        </tr>
+    </thead>
+    <tbody>
+        {%if reviewers %}
+            {%for r in reviewers %}
+            <tr>
+                <td>{{r.assigned_on|date:'m/d/Y'}}</td>
+                <td>{{r.reviewer.first_name}} {{r.reviewer.last_name}}</td>
+                <td>
+                    <span class="reviewer-status-display" data-id="{{r.id}}">{{r.status|safe}}</span>
+                    <span class="reviewer-status-edit" data-id="{{r.id}}" style="display:none;">
+                        <select class="form-control form-control-sm reviewer-status-select" data-id="{{r.id}}">
+                            <option value="---" {% if r.status == '---' %}selected{% endif %}>---</option>
+                            <option value="Approved" {% if r.status == 'Approved' %}selected{% endif %}>Approved</option>
+                            <option value="Declined" {% if r.status == 'Declined' %}selected{% endif %}>Declined</option>
+                            <option value="Need more information" {% if r.status == 'Need more information' %}selected{% endif %}>Need more information</option>
+                        </select>
+                        <button class="btn btn-sm btn-primary mt-1 save-reviewer-status" data-id="{{r.id}}">Save</button>
+                        <button class="btn btn-sm btn-secondary mt-1 cancel-reviewer-status" data-id="{{r.id}}">Cancel</button>
+                    </span>
+                </td>
+                <td>{{r.misc_info.reviewer_note|safe}}</td>
+                <td class="text-right">
+                    <a title="Edit Status" class="edit_reviewer_status" href="#" data-id="{{r.id}}"><i class="fa fa-edit fa-w"></i></a>&nbsp;&nbsp;
+                    <a title="Email Reviewer" class="remind_reviewer" href="#" data-id="{{r.id}}"><i class="fa fa-envelope fa-w"></i></a>&nbsp;&nbsp;&nbsp;&nbsp;
+                    <a title="Delete Reviewer" href="?action=delete_reviewer&reviewer={{r.id}}"><i class="fa fa-trash fa-w"></i></a>
+                </td>
+            </tr>
+            {%endfor%}
+        {%else%}
+            <td colspan="5">None found</td>
+        {%endif%}
+    </tbody>
+</table>

@@ -1,0 +1,50 @@
+<div class="bg-white border border-top-0">
+    <div class="col-md-12 pt-3 mb-3">
+        <div class="card">
+            <div class="card-body bg-gray-200">
+                <form id="{{ filter_form_id }}" class="form-inline float-right filter">
+                    <input type="hidden" name="reviewer" value="{{ request.user.id }}">
+                    <div class="form-row">
+                        <div class="col">
+                            <div class="float-right">
+                                <select class="form-control mr-2" name="course_status">
+                                    <option value="">Filter By Final Course Decision</option>
+                                    {% for key, value in course_status %}
+                                    <option value="{{ key }}">{{ value }}</option>
+                                    {% endfor %}
+                                </select>
+                                <select class="form-control mr-2" name="status">
+                                    <option value="">Filter By Status</option>
+                                    {% for key, value in status %}
+                                    <option value="{{ key }}">{{ value }}</option>
+                                    {% endfor %}
+                                </select>
+                                <select class="form-control" name="cohort">
+                                    <option value="">Filter By Subject</option>
+                                    {% for cohort in cohorts %}
+                                    <option value="{{ cohort.id }}">{{ cohort.designator }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 pt-3 mb-3">
+        <table id="{{ table_id }}" class="table table-striped responsive" style="width:100%">
+            <thead>
+                <tr>
+                    <th data-data="createdon" data-name="createdon">Created On</th>
+                    <th data-data="user.last_name" data-name="user.last_name">Name</th>
+                    <th data-data="highschool.name" data-name="highschool.name">High School</th>
+                    <th data-data="courses" data-name="courses">Course(s)</th>
+                    <th data-data="status" data-name="status">Status</th>
+                    <th data-data="id" data-name="id"><span class="sr-only">Actions</span></th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+</div>

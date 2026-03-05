@@ -1,0 +1,137 @@
+{% extends "cis/base.html" %}
+
+{% load crispy_forms_tags %}
+
+{% block title %}Complete Your {{ MYCE_SETTINGS.site_name }} Account{% endblock %}
+
+{% block body %}
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-throttle-debounce/1.1/jquery.ba-throttle-debounce.min.js"
+    integrity="sha512-JZSo0h5TONFYmyLMqp8k4oPhuo6yNk9mHM+FY50aBjpypfofqtEWsAgRDQm94ImLCzSaHeqNvYuD9382CEn2zw=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+    jQuery(document).ready(function ($) {
+        $('#id_ssn').mask('000-00-0000');
+        $('#id_primary_phone, #id_alt_phone, #id_secondary_phone').mask('0000000000');
+        $("#id_home_address").addressAutocomplete({
+            lookupUrl: "{% url 'student:address_lookup' %}"
+        });
+
+        $("#id_password, #id_confirm_password").css("display", 'inline-block');
+        $("#hint_id_password, #hint_id_confirm_password").before('<div class="input-group-append" style="display: inline-block"><span class="input-group-text show_password" style="margin-left: -8px; padding: 10px; border-radius: 0;"><i class="far fa-eye"></i></span></div>');
+
+        $(document).on('click', '.show_password', function () {
+            let prop_value = $("#id_password").prop('type');
+            if (prop_value == 'text')
+                prop_value = 'password';
+            else
+                prop_value = 'text';
+            $("#id_password, #id_confirm_password").prop('type', prop_value);
+        });
+
+        function validate_password_complexity() {
+            const pw = $("#id_password").val();
+            const $field = $("#id_password");
+            let $feedback = $("#password_feedback");
+
+            if ($feedback.length === 0) {
+                $field.closest('div').after('<div id="password_feedback" style="font-size: 0.85em; margin-top: 5px;"></div>');
+                $feedback = $("#password_feedback");
+            }
+
+            if (!pw) {
+                $feedback.html('');
+                $field[0].setCustomValidity("");
+                return;
+            }
+
+            const hasLength = pw.length >= 12;
+            const hasDigit = /\d/.test(pw);
+            const hasUpper = /[A-Z]/.test(pw);
+            const hasLower = /[a-z]/.test(pw);
+            const hasSpecial = /[^A-Za-z0-9]/.test(pw);
+
+            let errors = [];
+            if (!hasLength) errors.push("12+ chars");
+            if (!hasUpper) errors.push("1 uppercase");
+            if (!hasLower) errors.push("1 lowercase");
+            if (!hasDigit) errors.push("1 number");
+            if (!hasSpecial) errors.push("1 special char");
+
+            if (errors.length > 0) {
+                $feedback.html('<span style="color:red">Needs: ' + errors.join(', ') + '</span>');
+                $field[0].setCustomValidity("Missing requirements: " + errors.join(', '));
+            } else {
+                $feedback.html('<span style="color:green">✔ Valid format</span>');
+                $field[0].setCustomValidity("");
+            }
+
+            validate_password_match();
+        }
+
+        function validate_password_match() {
+            const pw = $("#id_password").val();
+            const confirm = $("#id_confirm_password").val();
+            const $field = $("#id_confirm_password");
+
+            let $feedback = $("#confirm_feedback");
+            if ($feedback.length === 0) {
+                $field.closest('div').after('<div id="confirm_feedback" style="font-size: 0.85em; margin-top: 5px;"></div>');
+                $feedback = $("#confirm_feedback");
+            }
+
+            if (!confirm) {
+                $feedback.html('');
+                $field[0].setCustomValidity("");
+                return;
+            }
+
+            if (pw !== confirm) {
+                $feedback.html('<span style="color:red">Passwords do not match</span>');
+                $field[0].setCustomValidity("Passwords do not match");
+            } else {
+                $feedback.html('<span style="color:green">✔ Passwords match</span>');
+                $field[0].setCustomValidity("");
+            }
+        }
+
+        $(document).on('input', '#id_password', validate_password_complexity);
+        $(document).on('input', '#id_password, #id_confirm_password', validate_password_match);
+    });
+</script>
+<main role="main" id="content">
+    <div class="container bg-light pt-3">
+        <div class="row">
+            {% if messages %}
+            <div class="col-md-12">
+                <ul class="messages list-group">
+                    {% for message in messages %}
+                    <li{% if message.tags %} class="list-group-item {{ message.tags }}" {% endif %}>
+                        {{ message }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <div class="col-md-9">
+                {% if form.errors %}
+                <p class="alert alert-danger">Please correct the errors in the form below and try again.</p>
+                {% endif %}
+
+                {{ form.media }}
+                <form action="" method="post">
+                    {% csrf_token %}
+                    {{ form | crispy }}
+                    <input type="submit" value="Complete Registration" name="submit_complete_signup"
+                        class="btn btn-primary" />
+                    <br>
+                </form>
+            </div>
+
+            <div class="col-md-3">
+                <p class="alert alert-info">* required items</p>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}

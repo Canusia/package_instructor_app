@@ -1,0 +1,167 @@
+{% extends "cis/logged-base.html" %}
+{%block title %}Interested Course(s){% endblock %}
+
+{% load templatehelpers %}
+{% load crispy_forms_tags %}
+
+{% block body %}
+<script>
+    $(function () {
+      $('select').multipleSelect({
+          filter: true
+      })
+    })
+  </script>
+<main>
+    {% include "instructor_app/_application_nav.html" with active_step="Select Course(s)" %}
+
+    <div class="row">
+        {% if messages %}
+        <div class="col-12">
+            <ul class="messages list-group mb-3">
+                {% for message in messages %}
+                <li{% if message.tags %} class="list-group-item {{ message.tags }}" {% endif %}>
+                    {{ message }}</li>
+                    {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <script>
+            jQuery(function ($) {
+                $(".dateinput").datepicker();
+            });
+
+            jQuery(document).ready(function ($) {
+                var newSchoolFields = "#div_id_new_school_name, #div_id_principal_name, #div_id_principal_email";
+
+                function toggleSchoolName() {
+                    let obj = $('#id_highschool')
+
+                    if(obj===null || typeof(obj.val()) == 'undefined') {
+                        $(newSchoolFields).hide();
+                        return;
+                    }
+
+                    if (obj.val() == -1) {
+                        $(newSchoolFields).show();
+                        $("#id_new_school_name").focus();
+                        $('#hint_id_highschool').html("")
+                    } else {
+                        $(newSchoolFields).hide();
+                    }
+                }
+
+                toggleSchoolName();
+
+                $("#id_highschool").change(function () {
+                    toggleSchoolName()
+                })
+
+                function loadCourseDetails() {
+                    var courseId = $('#id_course').val();
+                    if (!courseId) {
+                        $('#course_details_panel').hide();
+                        return;
+                    }
+                    $.getJSON('{% url "applicant_app:course_details" "00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', courseId), function(data) {
+                        $('#cd_description').html(data.description || '<span class="text-muted">N/A</span>');
+                        $('#cd_teacher_requirement').html(data.teacher_requirement || '<span class="text-muted">N/A</span>');
+                        $('#cd_prereq').html(data.prereq || '<span class="text-muted">N/A</span>');
+                        var $reqs = $('#cd_app_requirements').empty();
+                        if (data.app_requirements.length > 0) {
+                            data.app_requirements.forEach(function(r) {
+                                $reqs.append('<li>' + r.name + (r.required == '1' ? ' <span class="badge badge-danger">Required</span>' : '') + '</li>');
+                            });
+                        } else {
+                            $reqs.append('<li class="text-muted">None</li>');
+                        }
+                        $('#course_details_panel').show();
+                    });
+                }
+
+                $('#id_course').change(function() {
+                    loadCourseDetails();
+                });
+
+                loadCourseDetails();
+
+                var coursesTable = $('#selected_courses').DataTable({
+                    ajax: '{{api_url}}',
+                    serverSide: true,
+                    processing: true,
+                    rowId: 'id',
+                    paging: false,
+                    searching: false,
+                    info: false,
+                    ordering: false,
+                    language: {
+                        emptyTable: '<span class="text-danger">No courses have been selected. Please use the form below to begin selection.</span>'
+                    },
+                    columns: [
+                        null,
+                        null,
+                        {
+                            searchable: false,
+                            orderable: false,
+                            render: function (data, type, row) {
+                                return '<a href="{% url "applicant_app:remove_course" teacher_application.id %}?course_id=' + row.id + '">Delete</a>';
+                            }
+                        }
+                    ]
+                });
+            });
+        </script>
+        <div class="col-md-12">
+            <table id="selected_courses" class="table table-striped" style="width:100%">
+                <thead>
+                    <tr>
+                        <th data-data="course_name" data-name="course_name">Course</th>
+                        <th data-data="highschool_name" data-name="highschool_name">High School</th>
+                        <th data-data="id" data-name="id"></th>
+                    </tr>
+                </thead>
+            </table>
+            <hr>
+            <div class="row">
+                <div class="col-8">
+<div class="card">
+                <div class="card-body">
+                    <form action="" method="post" id="">
+                        {% csrf_token %}
+                        {{ form | crispy }}
+                        <input type="submit" class="btn btn-primary btn-sm" name="submit"
+                            value="Save and Add Another Course">&nbsp;&nbsp;
+                        <input type="submit" class="btn btn-primary btn-sm" name="submit" value="Save and Continue">
+                        <span class="text-muted"><br>Next: Recommendation Request</span>
+                    </form>
+                </div>
+            </div>
+                </div>
+                <div class="col-4">
+                    <div id="course_details_panel" style="display:none;">
+                        <div class="card">
+                            <div class="card-header"><strong>Course Details</strong></div>
+                            <div class="card-body">
+                                <p><strong>Description:</strong></p>
+                                <div id="cd_description"></div>
+                                <hr>
+                                <p><strong>Teacher Requirements:</strong></p>
+                                <div id="cd_teacher_requirement"></div>
+                                <hr>
+                                <p><strong>Prerequisites:</strong></p>
+                                <div id="cd_prereq"></div>
+                                <hr>
+                                <p><strong>Required Documents:</strong></p>
+                                <ul id="cd_app_requirements"></ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+</main>
+{% endblock %}

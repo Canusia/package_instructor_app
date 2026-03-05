@@ -1,0 +1,19 @@
+# MANIFEST.in
+
+include LICENSE
+include README.md
+include requirements.txt
+
+# Include templates
+recursive-include instructor_app/templates *
+
+# Include static files
+recursive-include instructor_app/staticfiles *
+
+# Include migrations
+recursive-include instructor_app/migrations *.py
+
+# Exclude compiled Python files
+global-exclude *.pyc
+global-exclude __pycache__
+global-exclude *.pyo

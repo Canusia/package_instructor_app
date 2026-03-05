@@ -1,0 +1,50 @@
+{% extends "cis/logged-base.html" %}
+{%block title %}Profile{% endblock %}
+
+{% load templatehelpers %}
+{% load crispy_forms_tags %}
+
+{% block body %}
+<main>
+    {{intro|safe}}
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'applicant_app:dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Profile</li>
+        </ol>
+    </nav>
+    <div class="row">
+        <div class="col-12">
+            {% if messages %}
+            <ul class="messages list-group mb-4">
+                {% for message in messages %}
+                <li{% if message.tags %} class="list-group-item {{ message.tags }}" {% endif %}>
+                    {{ message }}</li>
+                    {% endfor %}
+            </ul>
+            {% endif %}
+            <div class="tab-content">
+                <div class="tab-pane active" id="profile_infomation">
+                    <div class="card">
+                        <div class="card-body">
+
+                            <p class="alert alert-info">
+                                Please use the form to update your Profile.
+                            </p>
+
+                            <form action="" method="post">
+                                {% csrf_token %}
+                                {{ form | crispy }}
+
+                                <input type="submit" value="Update Profile" name="update_profile"
+                                    class="btn btn-primary" />
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}

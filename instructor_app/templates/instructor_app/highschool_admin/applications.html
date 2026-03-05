@@ -1,0 +1,151 @@
+{% extends "cis/logged-base.html" %}
+{%block title %}Instructor Applications{% endblock %}
+
+{% load templatehelpers %}
+{% load crispy_forms_tags %}
+
+{% block body %}
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-throttle-debounce/1.1/jquery.ba-throttle-debounce.min.js"
+    integrity="sha512-JZSo0h5TONFYmyLMqp8k4oPhuo6yNk9mHM+FY50aBjpypfofqtEWsAgRDQm94ImLCzSaHeqNvYuD9382CEn2zw=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+{{ add_teacher_form.media }}
+<script>
+    jQuery(document).ready(function ($) {
+        $('#id_ssn').mask('000-00-0000');
+        $('#id_primary_phone, #id_alt_phone, #id_secondary_phone').mask('0000000000');
+        $("#id_home_address").addressAutocomplete({
+            lookupUrl: "{% url 'student:address_lookup' %}"
+        });
+
+        $("#id_password, #id_confirm_password").css("display", 'inline-block');
+        $("#hint_id_password, #hint_id_confirm_password").before('<div class="input-group-append" style="display: inline-block"><span class="input-group-text show_password" style="margin-left: -8px; padding: 10px; border-radius: 0;"><i class="far fa-eye"></i></span></div>');
+
+        $(document).on('click', '.show_password', function () {
+            let prop_value = $("#id_password").prop('type');
+            prop_value = prop_value == 'text' ? 'password' : 'text';
+            $("#id_password, #id_confirm_password").prop('type', prop_value);
+        });
+    });
+</script>
+<main>
+    <div class="row">
+        <div class="col-md-12">
+
+            {{intro|safe}}
+
+            <ul class="nav nav-tabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" data-toggle="tab" href="#applications" role="tab">Applications</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-toggle="tab" href="#teachers" role="tab">Current Teachers</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-toggle="tab" href="#add_teacher" role="tab">Add New Teacher</a>
+                </li>
+            </ul>
+
+            <div class="tab-content">
+                <div class="tab-pane active" id="applications" role="tabpanel">
+                    <div class="card border-top-0">
+                        <div class="card-body">
+                            <div class="clearfix"></div>
+                            {% if applications %}
+                            <table class="table table-striped mt-4">
+                                <thead>
+                                    <tr>
+                                        <th>Applicant</th>
+                                        <th>Started On</th>
+                                        <th>High School</th>
+                                        <th>Course(s)</th>
+                                        <th>Status</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for app in applications %}
+                                    <tr>
+                                        <td>{{app.user.first_name}} {{app.user.last_name}}</td>
+                                        <td>{{app.createdon|date:'m/d/Y'}}</td>
+                                        <td>{{app.highschool}}</td>
+                                        <td>{{app.courses}}</td>
+                                        <td>{{app.status_for_teacher}}</td>
+                                        <td>
+                                            {% if app.can_edit %}
+                                                {% if app.can_submit %}
+                                                <a href="{% url 'applicant_app:review_application' app.id %}">Review and Submit</a>
+                                                {% else %}
+                                                <a href="{% url 'applicant_app:review_application' app.id %}">Edit and Submit</a>
+                                                {%endif%}
+                                            {%else%}
+                                            <a href="{% url 'applicant_app:review_application' app.id %}">View</a>
+                                            {%endif%}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                            {% else %}
+                            <p class="alert alert-info mt-3">There are no applications</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane" id="teachers" role="tabpanel">
+                    <div class="card border-top-0">
+                        <div class="card-body">
+                            {% if teacher_highschools %}
+                            <table class="table table-striped mt-4">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>High School</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for th in teacher_highschools %}
+                                    <tr>
+                                        <td>{{th.teacher.user.first_name}} {{th.teacher.user.last_name}}</td>
+                                        <td>{{th.teacher.user.email}}</td>
+                                        <td>{{th.highschool}}</td>
+                                        <td>
+                                            <form action="" method="post" class="d-inline">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="user_id" value="{{ th.teacher.user.id }}">
+                                                <button type="submit" class="btn btn-primary btn-sm">Start New Application</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                            {% else %}
+                            <p class="alert alert-info mt-3">No teachers found</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane" id="add_teacher" role="tabpanel">
+                    <div class="card border-top-0">
+                        <div class="card-body">
+                            <form action="" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="add_new_teacher">
+                                {{ add_teacher_form | crispy }}
+                                <button type="submit" class="btn btn-primary">Create & Start Application</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</main>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends "cis/logged-base.html" %}
+{%block title %}Instructor Applicant Educational Background{% endblock %}
+
+{% load templatehelpers %}
+{% load crispy_forms_tags %}
+
+{% block body %}
+<main>
+    {% include "instructor_app/_application_nav.html" with active_step="Manage Ed. Background" %}
+
+    <div class="row">
+        {% if messages %}
+        <div class="col-12">
+            <ul class="messages list-group mb-3">
+                {% for message in messages %}
+                <li{% if message.tags %} class="list-group-item {{ message.tags }}" {% endif %}>
+                    {{ message }}</li>
+                    {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        <div class="col-md-12">
+            {{page_intro|safe}}
+            <div class="card">
+                <div class="card-body">
+                    <form action="" method="post" id="">
+                        {% csrf_token %}
+                        {{ form.teacher_application|as_crispy_field }}
+                        {{ form.other_name|as_crispy_field }}
+
+                        <div class="row form-group font-weight-bold">
+                            <div class="col">Institution</div>
+                            <div class="col">Degree, Licensure, or Other</div>
+                            <div class="col">Major (if any)</div>
+                        </div>
+
+                        {{ formset.management_form }}
+                        {% for entry_form in formset %}
+                        <div class="row form-group">
+                            <div class="col">{{ entry_form.institution }}</div>
+                            <div class="col">{{ entry_form.degree }}</div>
+                            <div class="col">{{ entry_form.major }}</div>
+                        </div>
+                        {% endfor %}
+
+                        {{ form.credits_earned|as_crispy_field }}
+                        {{ form.masters_level_credits|as_crispy_field }}
+                        {{ form.grad_courses|as_crispy_field }}
+                        {{ form.undergrad_program|as_crispy_field }}
+                        {{ form.certified_states|as_crispy_field }}
+                        {{ form.certified_subjects|as_crispy_field }}
+                        {{ form.highschool_years|as_crispy_field }}
+                        {{ form.college_years|as_crispy_field }}
+                        {{ form.courses_taught|as_crispy_field }}
+
+                        <input type="submit" class="btn btn-primary btn-sm" value="Save and Continue">
+                    </form>
+                    <span class="text-muted">
+                        Next: Upload Materials</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
+{% endblock %}

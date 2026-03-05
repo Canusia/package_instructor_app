@@ -1,0 +1,72 @@
+{% extends "cis/logged-base.html" %}
+{%block title %}Instructor Applicant Dashboard{% endblock %}
+
+{% load templatehelpers %}
+
+{% block body %}
+<main>
+    <div class="row">
+        <div class="col-md-12">
+            {% if applications %}
+
+            {{intro|safe}}
+            
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Application(s)<small>
+                            <form action="" method="post" id="" class="float-right">
+                                {% csrf_token %}
+                                <input type="submit" class="btn btn-primary btn-sm" value="Start a New Application">
+                            </form>
+                        </small></h5>
+                    <div class="clearfix"></div>
+                    <table class="table table-striped mt-4">
+                        <thead>
+                            <tr>
+                                <th>Started On</th>
+                                <th>High School</th>
+                                <th>Course(s)</th>
+                                <th>Status</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for app in applications %}
+                            <tr>
+                                <td>{{app.createdon|date:'m/d/Y'}}</td>
+                                <td>{{app.highschool}}</td>
+                                <td>{{app.courses}}</td>
+                                <td>{{app.status_for_teacher}}</td>
+                                <td>
+                                    {% if app.can_edit %}
+                                        {% if app.can_submit %}
+                                        <a href="{% url 'applicant_app:review_application' app.id %}">Review and Submit</a>
+                                        {% else %}
+                                        <a href="{% url 'applicant_app:review_application' app.id %}">Edit and Submit</a>
+                                        {%endif%}
+                                    {%else%}
+                                    <a href="{% url 'applicant_app:review_application' app.id %}">View</a>
+                                    {%endif%}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {% else %}
+            <p class="alert alert-danger">There are no applications</p>
+            {% endif %}
+        </div>
+        <div class="col-md-4 d-none">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    Some general information about applications
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
+{% endblock %}

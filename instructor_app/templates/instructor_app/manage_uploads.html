@@ -1,0 +1,88 @@
+{% extends "cis/logged-base.html" %}
+{%block title %}Upload Application Materials{% endblock %}
+
+{% load templatehelpers %}
+{% load crispy_forms_tags %}
+
+{% block body %}
+<main>
+    {% include "instructor_app/_application_nav.html" with active_step="Upload Materials" %}
+
+    <div class="row">
+        {% if messages %}
+        <div class="col-12">
+            <ul class="messages list-group mb-3">
+                {% for message in messages %}
+                <li{% if message.tags %} class="list-group-item {{ message.tags }}" {% endif %}>
+                    {{ message }}</li>
+                    {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        <div class="col-md-12">
+
+            {{page_intro|safe}}
+
+            {% if uploads %}
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Uploaded Materials</th>
+                        <th>For</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {%for upload in uploads %}
+                    {% if upload.upload %}
+                    <tr>
+                        <td><a target="_blank" title=' ' href='{{upload.upload.url}}'>{{upload.upload|getfilename}}</a>
+                        </td>
+                        <td>
+                            {{upload.associated_with_as_html|safe}}
+                        </td>
+                        <td><a href='{% url 'applicant_app:remove_upload' teacher_application.id %}?upload_id={{upload.id}}'
+                                title=' '>Delete</a></a></td>
+                    </tr>
+                    {%endif%}
+                    {%endfor%}
+                </tbody>
+            </table>
+            {%else%}
+            <p class="alert alert-danger">No files have been uploaded. Please use the form below to start uploading
+                materials</p>
+            {%endif%}
+            <hr>
+            <div class="row">
+                <div class="col-8">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Upload Application Materials</h5>
+                            <form action="" enctype="multipart/form-data" method="post" id="">
+                                {% csrf_token %}
+                                {{ form | crispy }}
+                                <input type="submit" name="submit" class="btn btn-primary btn-sm"
+                                    value="Upload">&nbsp;&nbsp;<input type="submit" name="submit"
+                                    class="btn btn-primary btn-sm" value="Save & Continue">
+                                
+                                <div class="text-muted mt-2">
+                                    <a href="{% url 'applicant_app:review_application' teacher_application.id %}">Next: Review & Submit</a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <p class="alert alert-info">Based on the course(s) selected please upload the following document(s).<br><small>Click on <i class="fa fas fa-info-circle"></i> for more information.</small></p>
+                            {{teacher_application.document_list_asHTML|safe}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+</main>
+{% endblock %}

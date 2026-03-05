@@ -1,0 +1,255 @@
+{% extends "cis/logged-base.html" %}
+{%block title %}Review Application{% endblock %}
+
+{% load templatehelpers %}
+{% load crispy_forms_tags %}
+
+{% block body %}
+<main>
+    {% include "instructor_app/_application_nav.html" with active_step="Review & Submit" %}
+
+    <div class="row">
+        
+            <div class="col-md-12">
+                {% include "cis/messages.html" with messages=messages %}
+            </div>
+            
+        <div class="col-md-12">
+            {% if app_not_editable_message %}
+            <p class="alert alert-warning">{{ app_not_editable_message }}</p>
+            {% endif %}
+            <div class="card">
+                <div class="card-body">
+                    {{page_intro|safe}}
+                    <h3 class="card-title mt-5">Name & Contact Info {% if teacher_application.can_edit %}<small><a
+                                href="{% url 'applicant_app:profile' %}">Edit</a></small>{% endif %}
+                    </h3>
+                    <p class="alert">{{teacher_application.user}}<br>
+                        {{teacher_application.user.email}}
+                    </p>
+                    <hr>
+                    <h3 class="card-title mt-5">School & Course(s) {% if teacher_application.can_edit %}<small><a
+                                href="{% url 'applicant_app:manage_courses' teacher_application.id %}">Edit</a></small>{% endif %}
+                    </h3>
+                    {% if teacher_application.selected_courses %}
+                    <table class="table table-striped">
+
+                        <tbody>
+                            {% for course in teacher_application.selected_courses %}
+                            <tr>
+                                <td>{{course.highschool}}</td>
+                                <td>{{course.course}}</td>
+                            </tr>
+                            {%endfor%}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="alert alert-danger">No courses have been selected</p>
+                    {% endif %}
+
+                    <hr>
+                    <h3 class="mt-5 card-title">Recommendations {% if teacher_application.can_edit %}<small><a
+                                href="{% url 'applicant_app:manage_recommendation' teacher_application.id %}">Edit</a></small>{% endif %}
+                    </h3>
+
+                    {% if not teacher_application.has_received_recommendation %}
+                    <p class="alert alert-danger">Awaiting one or more recommendation(s). You will receive an email upon receipt.</p>
+                    {% endif %}
+
+                    {% if recommendations %}
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Submitted By</th>
+                                <th>Submitted On</th>
+                                <th>Recommendation</th>
+                            </tr>
+                        </thead>
+                        {% for recommendation in recommendations %}
+                        <tbody>
+                            <tr>
+                                <td>{{recommendation.submitter.name}}<br>{{recommendation.submitter.position}}</td>
+                                <td>{{recommendation.submitted_on|date:'m/d/Y'}}</td>
+                                <td>
+                                    {% if recommendation.upload %}
+                                    <a target="_blank"
+                                        href='{{recommendation.upload.url}}'>{{recommendation.upload|getfilename}}</a>
+                                        {% endif %}
+                                </td>
+                            </tr>
+                        </tbody>
+                        {% endfor %}
+                    </table>
+                    {% endif %}
+
+                    
+
+                    <hr>
+                    <h3 class="mt-5 card-title">Education Background {% if teacher_application.can_edit %}<small><a
+                                href="{% url 'applicant_app:manage_ed_bg' teacher_application.id %}">Edit</a></small>{% endif %}
+                    </h3>
+                    {% if teacher_application.has_submitted_ed_bg %}
+                    <table class="table table-striped">
+                        <thead>
+                            <th>Institution</th>
+                            <th>Degree</th>
+                            <th>Major</th>
+                            <th>Transcript</th>
+                            <th>Received On</th>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>{{ed_bg.institution.0}}</td>
+                                <td>{{ed_bg.degree.0}}</td>
+                                <td>{{ed_bg.major.0}}</td>
+                                <td>
+                                    {% if ed_bg.transcript_copy.0 == '1' %}
+                                    I will upload an unofficial copy to be sent
+                                    
+                                    {% elif ed_bg.transcript_copy.0 == '3' %}
+                                    CIHS already has this transcript on file
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ed_bg.transcript_recv.0}}
+                                </td>
+                            </tr>
+                            {% if ed_bg.institution.1 != '' %}
+                            <tr>
+                                <td>{{ed_bg.institution.1}}</td>
+                                <td>{{ed_bg.degree.1}}</td>
+                                <td>{{ed_bg.major.1}}</td>
+                                <td>
+                                    {% if ed_bg.transcript_copy.1 == '1' %}
+                                    I will upload an unofficial copy to be sent
+                                    
+                                    {% elif ed_bg.transcript_copy.1 == '3' %}
+                                    CIHS already has this transcript on file
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ed_bg.transcript_recv.1}}
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% if ed_bg.institution.2 != '' %}
+                            <tr>
+                                <td>{{ed_bg.institution.2}}</td>
+                                <td>{{ed_bg.degree.2}}</td>
+                                <td>{{ed_bg.major.2}}</td>
+                                <td>
+                                    {% if ed_bg.transcript_copy.2 == '1' %}
+                                    I will upload an unofficial copy to be sent
+                                    
+                                    {% elif ed_bg.transcript_copy.2 == '3' %}
+                                    CIHS already has this transcript on file
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ed_bg.transcript_recv.2}}
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% if ed_bg.institution.3 != '' %}
+                            <tr>
+                                <td>{{ed_bg.institution.3}}</td>
+                                <td>{{ed_bg.degree.3}}</td>
+                                <td>{{ed_bg.major.3}}</td>
+                                <td>
+                                    {% if ed_bg.transcript_copy.3 == '1' %}
+                                    I will upload an unofficial copy to be sent
+                                    
+                                    {% elif ed_bg.transcript_copy.3 == '3' %}
+                                    CIHS already has this transcript on file
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ed_bg.transcript_recv.3}}
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% if ed_bg.institution.4 != '' %}
+                            <tr>
+                                <td>{{ed_bg.institution.4}}</td>
+                                <td>{{ed_bg.degree.4}}</td>
+                                <td>{{ed_bg.major.4}}</td>
+                                <td>
+                                    {% if ed_bg.transcript_copy.4 == '1' %}
+                                    Will request an official copy to be sent
+                                    {% elif ed_bg.transcript_copy.4 == '2' %}
+                                    I will send an official transcript an official transcript
+                                    {% elif ed_bg.transcript_copy.4 == '3' %}
+                                    CIHS already has this transcript on file
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ed_bg.transcript_recv.4}}
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="alert alert-danger">Pending</p>
+                    {% endif %}
+
+                    <hr>
+                    <h3 class="mt-5 card-title">Application Uploads {% if teacher_application.can_edit %}<small><a
+                                href="{% url 'applicant_app:manage_uploads' teacher_application.id %}">Edit</a></small>{% endif %}
+                    </h3>
+                    {% if not teacher_application.has_uploaded_material %}
+                    <p class="alert alert-danger">Some of the required materials have not been uploaded</p>
+                    {% endif %}
+                    {% if uploads %}
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>File</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for upload in uploads %}
+                            <tr>
+                                <td><a target="_blank" href='{{upload.upload.url}}'>{{upload.upload|getfilename}}</a>
+                                </td>
+                            </tr>
+                            {%endfor%}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="alert alert-danger">No files have been uploaded</p>
+                    {% endif %}
+
+
+                    {% if teacher_application.can_submit %}
+                    {% if teacher_application.can_edit %}
+                    <p class="alert alert-info">Application is ready to be submitted</p>
+                    <form action="" method="post" id="">
+                        {% csrf_token %}
+                        <div class="form-group"> <div id="div_id_confirm_term" class="form-check"> <label for="id_confirm_term" class="form-check-label requiredField"> <input type="checkbox" name="confirm_term" class="bg-primary checkboxinput form-check-input" required="" id="id_confirm_term">
+                            {{ certification_text }}<span class="asteriskField">*</span> </label> </div> </div>
+
+                        <input type="submit" class="btn btn-primary btn-sm" value="Submit Application">
+                    </form>
+                    {% else %}
+                    <p class="alert alert-info">Your application has been submitted. Please contact our office to make any edits.</p>
+                    {% endif %}
+
+                    {% else %}
+                    
+                        {% if accepting_applications %}
+                            <hr>
+                            <h3 class="mt-5 card-title">Submit Application</h3>
+                            <p class="alert alert-danger">One or more required application items are not complete. They are highlighted in red. Please complete them and then you can submit your application.</p>
+                        {% else %}
+                            {{closed_message|safe}}
+                        {% endif %}
+                    {% endif %}
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
+{% endblock %}

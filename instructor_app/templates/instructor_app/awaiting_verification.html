@@ -1,0 +1,26 @@
+{% extends "cis/base.html" %}
+
+{% block title %}{{ MYCE_SETTINGS.site_name }} - Verify Your Email{% endblock %}
+
+{% block body %}
+<main role="main" id="content">
+    <div class="container bg-light pt-3 pb-3">
+        <div class="row">
+            {% if messages %}
+            <div class="col-md-12">
+                <ul class="messages list-group">
+                    {% for message in messages %}
+                    <li{% if message.tags %} class="list-group-item {{ message.tags }}" {% endif %}>
+                        {{ message }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <div class="col-md-12 mt-3">
+                {{intro|safe}}
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}

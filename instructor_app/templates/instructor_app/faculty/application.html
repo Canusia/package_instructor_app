@@ -1,0 +1,170 @@
+{% extends "instructor/logged-base.html" %}
+{%block title %}Instructor Class Details{% endblock %}
+
+{% load templatehelpers %}
+{% load crispy_forms_tags %}
+{% block body %}
+<main>
+    <h1 class="display-4 text-center">Instructor Class Detail</h1>
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'instructor:dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'instructor:classes' %}">All Classes</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{class_section}}</li>
+        </ol>
+    </nav>
+    <div class="row">
+        <div class="col-12">
+            {% if messages %}
+            <ul class="messages list-group mb-4">
+                {% for message in messages %}
+                <li{% if message.tags %} class="list-group-item {{ message.tags }}" {% endif %}>
+                    {{ message }}</li>
+                    {% endfor %}
+            </ul>
+            {% endif %}
+            <style>
+                div.cell div.info {
+                    font-size: 1.1em;
+                }
+
+                div.cell div.label {
+                    text-transform: uppercase;
+                    font-size: 0.7em;
+                    font-weight: 100;
+                }
+            </style>
+            <div class="row">
+                <div class="col-md-5">
+                    <div class="card">
+                        <div class="card-header">Details</div>
+                        <div class="card-body">
+                            <div class="row">
+
+                                <div class="col-6">
+                                    <div class="cell mb-3">
+                                        <div class="info">{{class_section.term}}</div>
+                                        <div class="label">Term</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="cell mb-3">
+                                        <div class="info">{{class_section.course}}</div>
+                                        <div class="label">Course</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="cell mb-3">
+                                        <div class="info">{{class_section}}</div>
+                                        <div class="label">Class #</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="cell mb-3">
+                                        <div class="info">{{class_section.section_number}}</div>
+                                        <div class="label">Section #</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="cell mb-3">
+                                        <div class="info">{{class_section.start_date}}</div>
+                                        <div class="label">Start Date</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="cell mb-3">
+                                        <div class="info">{{class_section.end_date}}</div>
+                                        <div class="label">End Date</div>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="cell mb-3">
+                                        <div class="info">{{class_section.highschool}}</div>
+                                        <div class="label">High School</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mt-4 d-none">
+                        <div class="card-header">Syllabus</div>
+                        <div class="card-body">
+                            {% if syllabi %}
+                                {% for syllabus in syllabi %}
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="cell mb-3">
+                                            <div class="info"><a target="_blank" href="{{syllabus.media.url}}">Download
+                                                    File</a></div>
+                                            <div class="label">File</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="cell mb-3">
+                                            <div class="info">{{syllabus.uploaded_on}}</div>
+                                            <div class="label">Uploaded On</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="cell mb-3">
+                                            <div class="info">{{syllabus.description}}</div>
+                                            <div class="label">Description</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <hr>
+                                <h4>Upload Syllabi</h4>
+                                <form action="" method="post" enctype="multipart/form-data">
+                                    {% csrf_token %}
+                                    {{ syllabi_form | crispy }}
+                                    <input type="submit" class="btn btn-primary btn-sm" name="add_syllabi" value="Add File">
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-7">
+                    <div class="card">
+                        <div class="card-header">Students In Section</div>
+                        <div class="card-body">
+                            {% if not students_in_class %}
+                            <p class="alert alert-info">No students found</p>
+                            {% else %}
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Student</th>
+                                            <th>EMPLID</th>
+                                            <th>Email</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for student in students_in_class %}
+                                        <tr>
+                                            <td>{{student.student.user.first_name}} {{student.student.user.last_name}}
+                                            </td>
+
+                                            <td>{{student.student.user.psid}}</td>
+                                            <td>{{student.student.user.email}}</td>
+                                            <td>{{student.status}}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="clearfix">&nbsp;</div>
+            </div>
+        </div>
+</main>
+{% endblock %}

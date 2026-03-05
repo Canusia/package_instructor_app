@@ -1,0 +1,284 @@
+{% extends "cis/logged-base.html" %}
+{% block title %}Review Application{% endblock %}
+
+{% load static %}
+{% load templatehelpers %}
+{% load crispy_forms_tags %}
+
+{% block body %}
+<main>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'faculty_app:instructor_apps' %}">Instructor Applications</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Review Application</li>
+        </ol>
+    </nav>
+    <style>
+        div.profile span.profile_label,
+        div.profile .detail_label {
+            text-transform: uppercase;
+            font-size: 0.7em;
+        }
+        .text-white .text-muted {
+            color: white !important;
+        }
+    </style>
+    <div class="row">
+        {% if messages %}
+        <div class="col-12">
+            <ul class="messages list-group mb-3">
+                {% for message in messages %}
+                <li{% if message.tags %} class="list-group-item {{ message.tags }}"{% endif %}>
+                    {{ message }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <div class="col-md-4">
+            <div class="card bg-info sticky-top text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Course(s)</h5>
+                    {% for course_review in courses %}
+                    <div>
+                        <h4 class="card-title">
+                            {{ course_review.application_course.course }}:&nbsp;{{ course_review.application_course.course.title }}
+                        </h4>
+                        <div class="profile">
+                            {% if course_review.status != '---' %}
+                            <div class="row mb-2 p-2">
+                                <p class="alert alert-info">You last reviewed the application and marked it as
+                                    {{ course_review.status }}.<br><br>You can update your recommendation until the
+                                    course administrator has updated the application.</p>
+                            </div>
+                            {% endif %}
+
+                            {% if course_review.application_course.status != '---' %}
+                            <div class="row mb-2 p-2 border-bottom">
+                                <div class="col-md-12">
+                                    <span class="profile_label">Your Recommendation</span>
+                                </div>
+                                <div class="col-md-12">
+                                    {{ course_review.status }}
+                                </div>
+                            </div>
+                            {% if course_review.status != '---' %}
+                            <div class="row mb-2 p-2 border-bottom">
+                                <div class="col-md-12">
+                                    <span class="profile_label">Note to Institution Staff</span>
+                                </div>
+                                <div class="col-md-12">
+                                    {{ course_review.misc_info.reviewer_note|default:""|linebreaksbr }}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% else %}
+                            <form action="" method="post">
+                                {% csrf_token %}
+                                {{ review_form|crispy }}
+                                <input type="hidden" name="application_course_id" value="{{ course_review.id }}">
+                                <input type="submit" class="btn btn-primary btn-sm" name="submit_review"
+                                    value="Submit Review">
+                            </form>
+                            {% if course_review.status != '---' %}
+                            <div class="row mb-2 mt-4 p-2 border-bottom">
+                                <div class="col-md-12">
+                                    <span class="profile_label">Note to Institution Staff</span>
+                                </div>
+                                <div class="col-md-12">
+                                    {{ course_review.misc_info.reviewer_note|default:""|linebreaksbr }}
+                                </div>
+                            </div>
+                            <div class="row mb-2 p-2 border-bottom">
+                                <div class="col-md-12">
+                                    <span class="profile_label">Recommendation History</span>
+                                </div>
+                                <div class="col-md-12 mt-2">
+                                    {{ course_review.get_status_history|safe }}
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% endif %}
+                        </div>
+                        <div class="clearfix">&nbsp;</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            {% if notes %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title text-primary"><i class="fa fa-comments"></i>&nbsp;&nbsp;Note(s) added by SUPA</h5>
+                    <div class="row mb-2 p-2 border-bottom">
+                        <div class="col-md-12">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Added By</th>
+                                        <th>Note</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for note in notes %}
+                                    <tr>
+                                        <td>{{ note.createdby }}</td>
+                                        <td>{{ note.note }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Application Information</h5>
+                    <div class="profile">
+                        <div class="row mb-2 p-2 border-bottom">
+                            <div class="col-md-2">
+                                <span class="profile_label">Status</span>
+                            </div>
+                            <div class="col-md-4">
+                                {{ record.status }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <h5 class="card-title mt-5">Teacher</h5>
+                    <div class="profile">
+                        <div class="row mb-2 p-2 border-bottom">
+                            <div class="col-md-2">
+                                <span class="profile_label">Name</span>
+                            </div>
+                            <div class="col-md-4">
+                                {{ record.user }}
+                            </div>
+                            <div class="col-md-2">
+                                <span class="profile_label">Email</span>
+                            </div>
+                            <div class="col-md-4">
+                                {{ record.user.email }}
+                            </div>
+                        </div>
+                        <div class="row mb-2 p-2">
+                            <div class="col-md-2">
+                                <span class="profile_label">Phone</span>
+                            </div>
+                            <div class="col-md-4">
+                                {{ record.user.primary_phone }}
+                            </div>
+                            <div class="col-md-2">
+                                <span class="profile_label">Address</span>
+                            </div>
+                            <div class="col-md-4">
+                                {{ record.user.address1 }}<br>{{ record.user.city }}, {{ record.user.state }}
+                                {{ record.user.postal_code }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <h5 class="card-title mt-5">High School</h5>
+                    <div class="profile">
+                        <div class="row mb-2 p-2 border-bottom">
+                            <div class="col-md-2">
+                                <span class="profile_label">Name</span>
+                            </div>
+                            <div class="col-md-4">
+                                {{ record.highschool }}
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if recommendations_needed > 0 %}
+                    <h5 class="card-title mt-5">Recommendations</h5>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Submitted By</th>
+                                <th>Submitted On</th>
+                                <th>Recommendation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for recommendation in recommendations %}
+                            <tr>
+                                <td>{{ recommendation.submitter.name }}<br>{{ recommendation.submitter.position }}</td>
+                                <td>{{ recommendation.submitted_on|date:'m/d/Y' }}</td>
+                                <td><a target="_blank" href="{{ recommendation.upload.url }}">{{ recommendation.upload|getfilename }}</a></td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3">No recommendations received yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% endif %}
+
+                    <h5 class="mt-5 card-title">Education Background</h5>
+                    {% if teacher_application.has_submitted_ed_bg %}
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Institution</th>
+                                <th>Degree</th>
+                                <th>Major</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in teacher_application.education_entries %}
+                            <tr>
+                                <td>{{ entry.institution }}</td>
+                                <td>{{ entry.degree }}</td>
+                                <td>{{ entry.major }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {{ ed_bg_form.credits_earned|as_crispy_field }}
+                    {{ ed_bg_form.masters_level_credits|as_crispy_field }}
+                    {{ ed_bg_form.grad_courses|as_crispy_field }}
+                    {{ ed_bg_form.undergrad_program|as_crispy_field }}
+                    {{ ed_bg_form.certified_states|as_crispy_field }}
+                    {{ ed_bg_form.certified_subjects|as_crispy_field }}
+                    {{ ed_bg_form.highschool_years|as_crispy_field }}
+                    {{ ed_bg_form.college_years|as_crispy_field }}
+                    {{ ed_bg_form.courses_taught|as_crispy_field }}
+                    {% endif %}
+
+                    <h5 class="mt-5 card-title">Application Uploads</h5>
+                    <p class="alert alert-info">Please click on the file name to download it.</p>
+                    {% if teacher_application.has_uploaded_material %}
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>File</th>
+                                <th>For</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for upload in uploads %}
+                            <tr>
+                                <td><a target="_blank" href="{{ upload.upload.url }}">{{ upload.upload|getfilename }}</a></td>
+                                <td>{{ upload.associated_with_as_html|safe }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="alert alert-danger">No files have been uploaded</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="{% static 'js/faculty_review.js' %}"></script>
+</main>
+{% endblock %}

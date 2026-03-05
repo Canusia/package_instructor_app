@@ -1,0 +1,266 @@
+{% extends "cis/logged-base.html" %}
+{%block title %}{{page_title}}{% endblock %}
+
+{% load static %}
+{% load templatehelpers %}
+
+{% block body %}
+
+<main>
+    <div class="">
+        <div class="row">
+            <div class="col-sm-6 col-xs-12">
+                <h1 class="h3 mb-4 text-gray-800">{{page_title}}&nbsp;
+                </h1>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <div id="index-config"
+                 data-api-url="{{ api_url }}"
+                 data-reviewer-api-url="{{ reviewer_api_url }}"
+                 data-applicant-api-url="{{ applicant_api_url }}"
+                 data-bulk-action-url="{% url 'ce_instructor_app:teacher_app_bulk_actions' %}">
+            </div>
+            <div class="">
+                <ul class="nav nav-tabs">
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="tab" href="#all">All Applications</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link active" data-toggle="tab" href="#active">Active</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="tab" href="#reviewers">By Reviewers</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="tab" href="#pending_verification">Pending Verification</a>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <div class="tab-pane active" id="active">
+                        <div class="bg-white border border-top-0">
+
+                            <div class="col-md-12 pt-3 mb-3">
+                                <div class="card">
+                                    <div class="card-body bg-gray-200">
+                                        <form id="class_section_filter_active" class="form-inline float-right filter">
+                                            <div class="form-row">
+                                                <div class="col">
+                                                    <div class="float-right">
+                                                        <select class="form-control" name="academic_year">
+                                                            <option value="">Filter By SI Attend Year</option>
+                                                            {% for c in academic_years %}
+                                                            <option value="{{c.id}}">{{c.name}}</option>
+                                                            {% endfor %}
+                                                        </select>&nbsp;&nbsp;<select class="form-control" name="course_status">
+                                                            <option value="">Filter By Final Course Decision</option>
+                                                            {% for key, value in course_status %}
+                                                            <option value="{{key}}">{{value}}</option>
+                                                            {% endfor %}
+                                                        </select>&nbsp;&nbsp;
+                                                        <select class="form-control" name="status">
+                                                            <option value="">Filter By Status</option>
+                                                            {% for key, value in status %}
+                                                            <option value="{{key}}">{{value}}</option>
+                                                            {% endfor %}
+                                                        </select>&nbsp;&nbsp;
+                                                        <select class="form-control" name="course">
+                                                            <option value="">Filter By Course</option>
+                                                            <option value='-2'>All My Course(s)</option>
+                                                            {% for cohort in courses %}
+                                                            <option value="{{cohort.id}}">{{cohort.cohort.designator}}
+                                                                {{cohort.catalog_number}}</option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12 pt-3 mb-3">
+                                <table id="records_active" class="table table-striped responsive" style="width:100%">
+                                    <thead>
+                                        <tr>
+                                            <th></th>
+                                            <th data-data="createdon" data-name='createdon'>Created On</th>
+                                            <th data-data="user.last_name" data-name="user.last_name">Name
+                                            </th>
+                                            <th data-data="highschool.name" data-name="highschool.name">High School
+                                            </th>
+                                            <th data-data="courses" data-name="courses">Course(s)
+                                            </th>
+                                            <th data-data="status" data-name="status">Status
+                                            </th>
+                                            <th data-data="missing_items" data-name="missing_items">Missing Item(s)</th>
+                                            <th data-data="ce_url" data-name='ce_url'><span
+                                                    class="sr-only">Actions</span></th>
+                                        </tr>
+                                    </thead>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane " id="all">
+                        <div class="bg-white border border-top-0">
+
+                            <div class="col-md-12 pt-3 mb-3">
+                                <div class="card">
+                                    <div class="card-body bg-gray-200">
+                                        <form id="class_section_filter" class="form-inline float-right filter">
+                                            <div class="form-row">
+                                                <div class="col">
+                                                    <div class="float-right">
+                                                        <select class="form-control" name="course_status">
+                                                            <option value="">Filter By Final Course Decision</option>
+                                                            {% for key, value in course_status %}
+                                                            <option value="{{key}}">{{value}}</option>
+                                                            {% endfor %}
+                                                        </select>&nbsp;&nbsp;
+                                                        <select class="form-control" name="status">
+                                                            <option value="">Filter By Status</option>
+                                                            {% for key, value in status %}
+                                                            <option value="{{key}}">{{value}}</option>
+                                                            {% endfor %}
+                                                        </select>&nbsp;&nbsp;
+                                                        <select class="form-control" name="cohort">
+                                                            <option value="">Filter By Subject</option>
+                                                            {% for cohort in cohorts %}
+                                                            <option value="{{cohort.id}}">{{cohort.designator}}</option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12 pt-3 mb-3">
+                                <table id="records_all" class="table table-striped responsive" style="width:100%">
+                                    <thead>
+                                        <tr>
+                                            <th></th>
+                                            <th data-data="createdon" data-name='createdon'>Created On</th>
+                                            <th data-data="user.last_name" data-name="user.last_name">Name
+                                            </th>
+                                            <th data-data="highschool.name" data-name="highschool.name">High School
+                                            </th>
+                                            <th data-data="courses" data-name="courses">Course(s)
+                                            </th>
+                                            <th data-data="status" data-name="status">Status
+                                            </th>
+                                            <th data-data="ce_url" data-name='ce_url'><span
+                                                    class="sr-only">Actions</span></th>
+                                        </tr>
+                                    </thead>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane " id="reviewers">
+                        <div class="bg-white border border-top-0">
+
+                            <div class="col-md-12 pt-3 mb-3">
+                                <div class="card">
+                                    <div class="card-body bg-gray-200">
+                                        <form id="reviewer_filter" class="form-inline float-right filter">
+                                            <div class="form-row">
+                                                <div class="col">
+                                                    <div class="float-right">
+                                                        <select class="form-control" name="course_review_status">
+                                                            <option value="">Filter By Review Decision</option>
+                                                            {% for key, value in course_review_status %}
+                                                            <option value="{{key}}">{{value}}</option>
+                                                            {% endfor %}
+                                                        </select>&nbsp;&nbsp;
+                                                        <select class="form-control" name="status">
+                                                            <option value="{{ fc_review_status }}">{{ fc_review_status }}</option>
+                                                            <option value="">All Applications</option>
+                                                            {% for key, value in status %}
+                                                            <option value="{{key}}">{{value}}</option>
+                                                            {% endfor %}
+                                                        </select>&nbsp;&nbsp;
+                                                        <select class="form-control" name="course">
+                                                            <option value="">Filter By Course</option>
+                                                            <option value='-2'>All My Course(s)</option>
+                                                            {% for cohort in courses %}
+                                                            <option value="{{cohort.id}}">{{cohort.cohort.designator}}
+                                                                {{cohort.catalog_number}}</option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12 pt-3 mb-3">
+                                <table id="records_reviewers" class="table table-striped responsive" style="width:100%">
+                                    <thead>
+                                        <tr>
+                                            <th data-data="assigned_on" data-name='assigned_on'>Assigned On</th>
+                                            <th data-data="application_course.teacherapplication.user.last_name"
+                                                data-name="application_course.teacherapplication.user.last_name">
+                                                Instructor Name
+                                            </th>
+                                            <th data-data="application_course.teacherapplication.highschool.name"
+                                                data-name="application_course.teacherapplication.highschool.name">High
+                                                School
+                                            </th>
+                                            <th data-data="application_course.course.name"
+                                                data-name="application_course.course.name">Course
+                                            </th>
+                                            <th data-data="reviewer.last_name" data-name="reviewer.last_name">Reviewer
+                                            </th>
+                                            <th data-data="status" data-name="status">Review Decision
+                                            </th>
+                                            <th data-data="application_course.teacherapplication.ce_url"
+                                                data-name='application_course.teacherapplication.ce_url'><span
+                                                    class="sr-only">Actions</span></th>
+                                        </tr>
+                                    </thead>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane " id="pending_verification">
+                        <div class="bg-white border border-top-0">
+                            <div class="col-12 pt-3 mb-3">
+                                <table id="records_pending" class="table table-striped responsive" style="width:100%">
+                                    <thead>
+                                        <tr>
+                                            <th></th>
+                                            <th data-data="user.last_name" data-name="user.last_name">Name</th>
+                                            <th data-data="user.email" data-name="user.email">Email</th>
+                                            <th data-data="status" data-name="status">Status</th>
+                                            <th data-data="account_verified" data-name="account_verified">Verified</th>
+                                            <th data-data="verify_email_url" data-name="verify_email_url"><span class="sr-only">Actions</span></th>
+                                        </tr>
+                                    </thead>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    <script src="{% static 'js/ce_applications_index.js' %}"></script>
+</main>
+
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends "cis/logged-base.html" %}
+{%block title %}Recommendation Request{% endblock %}
+
+{% load templatehelpers %}
+{% load crispy_forms_tags %}
+
+{% block body %}
+<main>
+    {% include "instructor_app/_application_nav.html" with active_step="Manage Recommendation" %}
+
+    <div class="row">
+        {% if messages %}
+        <div class="col-12">
+            <ul class="messages list-group mb-3">
+                {% for message in messages %}
+                <li{% if message.tags %} class="list-group-item {{ message.tags }}" {% endif %}>
+                    {{ message }}</li>
+                    {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        <div class="col-md-12">
+            {{page_intro|safe}}
+            <div class="card">
+                <div class="card-body">
+                    {% if recommendations %}
+                    <p class="alert alert-info">The following recommendation(s) have been received.</p>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Submitted By</th>
+                                <th>Submitted On</th>
+                                <th>Recommendation</th>
+                            </tr>
+                        </thead>
+                        {% for recommendation in recommendations %}
+                        <tbody>
+                            <tr>
+                                <td>{{recommendation.submitter.name}}<br>{{recommendation.submitter.position}}</td>
+                                <td>{{recommendation.submitted_on|date:'m/d/Y'}}</td>
+                                <td>
+                                    {% if recommendation.upload %}
+                                    <a target="_blank" href='{{recommendation.upload.url}}'>{{recommendation.upload|getfilename}}</a>
+                                    {%endif%}
+                                </td>
+                            </tr>
+                        </tbody>
+                        {% endfor %}
+                    </table>
+                    {% endif %}
+
+                    {% if not teacher_application.has_received_recommendation %}
+                        {% if teacher_application.misc_info.recommendation_requested_on %}
+                            <p class="alert alert-info">The request was last sent on {{teacher_application.misc_info.recommendation_requested_on}}. You can click below to resend request(s). Requests will be only resent to people who have not submitted their recommendation.</p>
+                        {% endif %}
+                        <style>
+                            div#div_id_name_2, div#div_id_name_3  {
+                                margin-top: 50px;
+                                padding-top: 20px;
+                            }
+                        </style>
+                        <h5 class="card-title">Recommender Contact Details</h5>
+                        <form action="" method="post" id="">
+                            {% csrf_token %}
+                            {{ form | crispy }}
+                            <p class="alert alert-info">
+                                {{page_footer|safe}}
+                            </p>
+                            <input type="submit" name="submit" class="btn btn-primary btn-sm" value="Request Recommendation and Continue">
+                            <a class="btn btn-secondary btn-sm" href="{% url 'applicant_app:manage_ed_bg' teacher_application.id%}">Continue and Send Later</a>
+                        </form>
+                        <span class="text-muted">
+                            Next: Educational Background</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+</main>
+{% endblock %}
