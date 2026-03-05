@@ -1,14 +1,14 @@
 # Backward-compatible re-export shim.
 # All views have been split into separate modules:
 #   viewsets.py, detail.py, actions.py, bulk_actions.py
-from instructor_app.views.ce.viewsets import (
+from .viewsets import (
     TeacherApplicantViewSet,
     TeacherApplicationViewSet,
     TeacherApplicationReviewerViewSet,
     ApplicantCourseListViewSet,
 )
-from instructor_app.views.ce.detail import detail
-from instructor_app.views.ce.actions import (
+from .detail import detail
+from .actions import (
     send_approval_email,
     view_approval_email,
     download_as_pdf,
@@ -23,18 +23,18 @@ from instructor_app.views.ce.actions import (
     remove_upload,
     delete_record,
 )
-from instructor_app.views.ce.bulk_actions import do_bulk_action
+from .bulk_actions import do_bulk_action
 
 from django.shortcuts import render
 from cis.menu import cis_menu, draw_menu
 from cis.models.course import Course
 from cis.models.term import AcademicYear
-from instructor_app.models.teacher_applicant import (
+from ...models.teacher_applicant import (
     TeacherApplication,
     ApplicantCourseReviewer,
     ApplicantSchoolCourse,
 )
-from instructor_app.settings.inst_app_language import inst_app_language
+from ...settings.inst_app_language import inst_app_language
 
 
 def index(request):

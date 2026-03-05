@@ -2,11 +2,11 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib import messages
 
 from cis.utils import user_has_instructor_role, user_has_highschool_admin_role
-from instructor_app.models.teacher_applicant import TeacherApplication
-from instructor_app.forms.teacher_applicant import EdBgForm, EducationEntryFormSet
+from ..models.teacher_applicant import TeacherApplication
+from ..forms.teacher_applicant import EdBgForm, EducationEntryFormSet
 from cis.menu import draw_menu, INSTRUCTOR_APP_MENU, INSTRUCTOR_MENU, HS_ADMIN_MENU
-from instructor_app.settings.inst_app_language import inst_app_language
-from instructor_app.utils import get_teacher_application
+from ..settings.inst_app_language import inst_app_language
+from ..utils import get_teacher_application
 
 
 def manage_ed_background(request, record_id):

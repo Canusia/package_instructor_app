@@ -8,7 +8,7 @@ from django.db.models import JSONField
 from model_utils import FieldTracker
 
 from alerts.models import Alert
-from instructor_app.email import render_email, send_notification
+from ..email import render_email, send_notification
 from cis.models.term import AcademicYear
 from cis.models.course import CourseAppRequirement, Course
 
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 FC_REVIEW_STATUS_DEFAULT = 'Ready for Review'
 
 def get_fc_review_status():
-    from instructor_app.settings.inst_app_language import inst_app_language
+    from ..settings.inst_app_language import inst_app_language
     return inst_app_language.from_db().get('fc_review_status_label', FC_REVIEW_STATUS_DEFAULT) or FC_REVIEW_STATUS_DEFAULT
 
 
@@ -58,7 +58,7 @@ class TeacherApplication(models.Model):
 
     def get_approval_notification_email(self):
         from django.utils.html import strip_tags
-        from instructor_app.settings.teacher_application_email import (
+        from ..settings.teacher_application_email import (
             teacher_application_email
         )
 
@@ -76,7 +76,7 @@ class TeacherApplication(models.Model):
 
     @property
     def accepted_courses(self):
-        from instructor_app.models.applicant_school_course import ApplicantSchoolCourse
+        from .applicant_school_course import ApplicantSchoolCourse
         return ApplicantSchoolCourse.objects.filter(
             teacherapplication=self,
             status__in=['Accepted', 'Conditionally Accepted']
@@ -87,7 +87,7 @@ class TeacherApplication(models.Model):
         return [sc.course.name for sc in self.accepted_courses]
 
     def notify_application_approved(self):
-        from instructor_app.settings.teacher_application_email import (
+        from ..settings.teacher_application_email import (
             teacher_application_email
         )
 
@@ -103,7 +103,7 @@ class TeacherApplication(models.Model):
         }, [self.user.email])
 
     def as_pdf(self, request=None):
-        from instructor_app.services.pdf import application_as_pdf
+        from ..services.pdf import application_as_pdf
         return application_as_pdf(self)
 
     def needs_notification(self, last_sent_on, num_days):
@@ -120,7 +120,7 @@ class TeacherApplication(models.Model):
         self.user.groups.remove(group)
 
     def import_as_teacher(self):
-        from instructor_app.services.import_teacher import import_as_teacher
+        from ..services.import_teacher import import_as_teacher
         return import_as_teacher(self)
 
     @property
@@ -132,8 +132,8 @@ class TeacherApplication(models.Model):
     @property
     def document_list_asHTML(self):
         import itertools
-        from instructor_app.models.applicant_school_course import ApplicantSchoolCourse
-        from instructor_app.models.application_upload import ApplicationUpload
+        from .applicant_school_course import ApplicantSchoolCourse
+        from .application_upload import ApplicationUpload
 
         files_uploaded = ApplicationUpload.objects.filter(
             teacher_application=self
@@ -184,7 +184,7 @@ class TeacherApplication(models.Model):
 
     @property
     def courses(self):
-        from instructor_app.models.applicant_school_course import ApplicantSchoolCourse
+        from .applicant_school_course import ApplicantSchoolCourse
         courses = ApplicantSchoolCourse.objects.filter(
             teacherapplication=self
         ).order_by(
@@ -198,7 +198,7 @@ class TeacherApplication(models.Model):
 
     @property
     def course_ids(self):
-        from instructor_app.models.applicant_school_course import ApplicantSchoolCourse
+        from .applicant_school_course import ApplicantSchoolCourse
         course_ids = ApplicantSchoolCourse.objects.filter(
             teacherapplication=self
         ).values_list('course__id')
@@ -232,7 +232,7 @@ class TeacherApplication(models.Model):
         return result
 
     def add_reviewers(self):
-        from instructor_app.models.applicant_course_reviewer import ApplicantCourseReviewer
+        from .applicant_course_reviewer import ApplicantCourseReviewer
         # for each course applied, get active faculty and add as reviewers
         applied_courses = self.selected_courses
         for applied_course in applied_courses:
@@ -260,7 +260,7 @@ class TeacherApplication(models.Model):
 
 
         if new_status.lower() == 'decision made':
-            from instructor_app.settings.teacher_application_email import teacher_application_email as tapp_s
+            from ..settings.teacher_application_email import teacher_application_email as tapp_s
 
             email_settings = tapp_s.from_db()
             internal_recipients = [e.strip() for e in email_settings.get('course_selected_email_recipient', '').split(',') if e.strip()]
@@ -286,7 +286,7 @@ class TeacherApplication(models.Model):
 
 
         if new_status.lower() == 'submitted':
-            from instructor_app.settings.teacher_application_email import teacher_application_email as tapp_s
+            from ..settings.teacher_application_email import teacher_application_email as tapp_s
 
             email_settings = tapp_s.from_db()
             notify_on = email_settings.get('internal_notify_on', [])
@@ -371,7 +371,7 @@ class TeacherApplication(models.Model):
 
     @classmethod
     def get_applications_assigned(cls, user, status=None):
-        from instructor_app.models.applicant_course_reviewer import ApplicantCourseReviewer
+        from .applicant_course_reviewer import ApplicantCourseReviewer
         pending_app_ids = ApplicantCourseReviewer.objects.filter(
             reviewer=user
         ).distinct('application_course').values_list('application_course__teacherapplication')
@@ -397,21 +397,21 @@ class TeacherApplication(models.Model):
         return bool(self.status == 'In Progress' or self.status == 'Incomplete')
 
     def has_selected_course(self):
-        from instructor_app.models.applicant_school_course import ApplicantSchoolCourse
+        from .applicant_school_course import ApplicantSchoolCourse
         return ApplicantSchoolCourse.objects.filter(
             teacherapplication=self
         ).exists()
 
     @property
     def selected_courses(self):
-        from instructor_app.models.applicant_school_course import ApplicantSchoolCourse
+        from .applicant_school_course import ApplicantSchoolCourse
         return ApplicantSchoolCourse.objects.filter(
             teacherapplication=self
         )
 
     def has_received_recommendation(self):
-        from instructor_app.settings.inst_app_language import inst_app_language
-        from instructor_app.models.applicant_recommendation import ApplicantRecommendation
+        from ..settings.inst_app_language import inst_app_language
+        from .applicant_recommendation import ApplicantRecommendation
 
         config = inst_app_language.from_db()
 
@@ -420,7 +420,7 @@ class TeacherApplication(models.Model):
         ).count() >= int(config.get('recommendations_needed', '1')) else False
 
     def has_recommender_submitted(self, rec_email):
-        from instructor_app.models.applicant_recommendation import ApplicantRecommendation
+        from .applicant_recommendation import ApplicantRecommendation
         return True if ApplicantRecommendation.objects.filter(
             teacher_application=self,
             submitter__email__iexact=rec_email
@@ -428,7 +428,7 @@ class TeacherApplication(models.Model):
 
     @property
     def recommendations(self):
-        from instructor_app.models.applicant_recommendation import ApplicantRecommendation
+        from .applicant_recommendation import ApplicantRecommendation
         try:
             return ApplicantRecommendation.objects.filter(
                 teacher_application=self
@@ -463,8 +463,8 @@ class TeacherApplication(models.Model):
     def has_uploaded_material(self):
         try:
             import itertools
-            from instructor_app.models.applicant_school_course import ApplicantSchoolCourse
-            from instructor_app.models.application_upload import ApplicationUpload
+            from .applicant_school_course import ApplicantSchoolCourse
+            from .application_upload import ApplicationUpload
 
             files_uploaded = ApplicationUpload.objects.filter(
                 teacher_application=self
@@ -488,7 +488,7 @@ class TeacherApplication(models.Model):
             return True
 
     def uploads(self):
-        from instructor_app.models.application_upload import ApplicationUpload
+        from .application_upload import ApplicationUpload
         return ApplicationUpload.objects.filter(
             teacher_application=self
         )
@@ -499,7 +499,7 @@ class TeacherApplication(models.Model):
         Checks if application is ready to be submitted
         """
 
-        from instructor_app.settings.inst_app_language import inst_app_language
+        from ..settings.inst_app_language import inst_app_language
         app_settings = inst_app_language.from_db()
         if app_settings.get('is_accepting_new', 'No') == 'No':
             return False
@@ -510,7 +510,7 @@ class TeacherApplication(models.Model):
 
     @property
     def interested_courses(self):
-        from instructor_app.models.applicant_school_course import ApplicantSchoolCourse
+        from .applicant_school_course import ApplicantSchoolCourse
         interested_courses = ApplicantSchoolCourse.objects.filter(
             teacherapplication=self
         )
@@ -557,8 +557,8 @@ class TeacherApplication(models.Model):
         self.save()
 
     def send_recommendation_request(self, sendto_name, sendto_email):
-        from instructor_app.settings.inst_app_language import inst_app_language
-        from instructor_app.models.applicant_school_course import ApplicantSchoolCourse
+        from ..settings.inst_app_language import inst_app_language
+        from .applicant_school_course import ApplicantSchoolCourse
 
         email_settings = inst_app_language.from_db()
 

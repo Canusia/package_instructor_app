@@ -11,18 +11,18 @@ from django.template.loader import get_template, render_to_string
 
 from mailer import send_mail, send_html_mail
 
-from instructor_app.models.teacher_applicant import (
+from ..models.teacher_applicant import (
     TeacherApplication, ApplicantSchoolCourse,
     ApplicantRecommendation,
     ApplicantCourseReviewer,
     get_fc_review_status
 )
 
-from instructor_app.settings.teacher_application_email import (
+from ..settings.teacher_application_email import (
     teacher_application_email as tapp_settings,
 )
 
-from instructor_app.settings.inst_app_language import (
+from ..settings.inst_app_language import (
     inst_app_language as inst_app_page_settings
 )
 

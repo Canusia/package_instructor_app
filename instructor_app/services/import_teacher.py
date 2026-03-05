@@ -17,8 +17,8 @@ def import_as_teacher(application):
     from cis.models.teacher import (
         Teacher, TeacherHighSchool, TeacherCourseCertificate, TeacherUpload
     )
-    from instructor_app.models.applicant_school_course import ApplicantSchoolCourse
-    from instructor_app.models.application_upload import ApplicationUpload
+    from ..models.applicant_school_course import ApplicantSchoolCourse
+    from ..models.application_upload import ApplicationUpload
 
     user = application.user
 

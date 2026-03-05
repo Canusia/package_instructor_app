@@ -4,7 +4,7 @@
 from django.urls import path
 from django.contrib.auth.decorators import user_passes_test
 
-from instructor_app.utils import user_has_applicant_role
+from ..utils import user_has_applicant_role
 
 from ..views.onboarding import (
     start_app,

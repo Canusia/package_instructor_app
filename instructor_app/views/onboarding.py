@@ -10,13 +10,13 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.db import IntegrityError
 from django.contrib import messages, auth
 
-from instructor_app.models.teacher_applicant import TeacherApplicant, TeacherApplication
-from instructor_app.forms.teacher_applicant import (
+from ..models.teacher_applicant import TeacherApplicant, TeacherApplication
+from ..forms.teacher_applicant import (
     TeacherApplicantVerifyEmailForm,
     TeacherApplicantVerifyAccountForm,
     TeacherApplicantProfileForm,
 )
-from instructor_app.settings.inst_app_language import inst_app_language
+from ..settings.inst_app_language import inst_app_language
 
 logger = logging.getLogger(__name__)
 

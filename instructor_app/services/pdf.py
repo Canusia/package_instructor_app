@@ -8,7 +8,7 @@ def application_as_pdf(application):
     Returns the PDF bytes.
     """
     import pdfkit
-    from instructor_app.forms.teacher_applicant import (
+    from ..forms.teacher_applicant import (
         TeacherApplicantProfileForm, EditTeacherApplicationForm, EdBgForm
     )
     from cis.models.note import TeacherApplicationNote

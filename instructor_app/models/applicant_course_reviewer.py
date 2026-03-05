@@ -6,7 +6,7 @@ from django.db.models import JSONField
 from model_utils import FieldTracker
 
 from alerts.models import Alert
-from instructor_app.email import send_notification
+from ..email import send_notification
 from cis.models.course import Course
 
 logger = logging.getLogger(__name__)
@@ -36,7 +36,7 @@ class ApplicantCourseReviewer(models.Model):
         unique_together = ['reviewer', 'application_course']
 
     def notify_reviewer(self):
-        from instructor_app.settings.teacher_application_email import teacher_application_email as tapp_settings
+        from ..settings.teacher_application_email import teacher_application_email as tapp_settings
 
         email_settings = tapp_settings.from_db()
         app = self.application_course.teacherapplication
@@ -86,7 +86,7 @@ class ApplicantCourseReviewer(models.Model):
     def notify_status_change(self, new_status):
         app = self.application_course.teacherapplication
 
-        from instructor_app.settings.teacher_application_email import teacher_application_email as tapp_s
+        from ..settings.teacher_application_email import teacher_application_email as tapp_s
 
         email_settings = tapp_s.from_db()
 

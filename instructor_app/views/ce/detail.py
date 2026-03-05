@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.http import JsonResponse
 from django.views.decorators.clickjacking import xframe_options_exempt
 
-from instructor_app.models.teacher_applicant import (
+from ...models.teacher_applicant import (
     TeacherApplicant,
     TeacherApplication,
     ApplicantRecommendation,
@@ -16,7 +16,7 @@ from instructor_app.models.teacher_applicant import (
 from cis.models.note import TeacherApplicationNote
 
 from cis.menu import cis_menu, draw_menu
-from instructor_app.forms.teacher_applicant import (
+from ...forms.teacher_applicant import (
     RecommendationRequestForm,
     StaffRecUploadForm,
     EdBgForm,
@@ -27,7 +27,7 @@ from instructor_app.forms.teacher_applicant import (
     TeacherApplicantEditableForm,
     MigrateForm,
 )
-from instructor_app.settings.inst_app_language import inst_app_language
+from ...settings.inst_app_language import inst_app_language
 
 logger = logging.getLogger(__name__)
 

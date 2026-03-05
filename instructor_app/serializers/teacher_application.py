@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 
-from instructor_app.models.teacher_applicant import (
+from ..models.teacher_applicant import (
     TeacherApplicant,
     TeacherApplication,
     ApplicantSchoolCourse,

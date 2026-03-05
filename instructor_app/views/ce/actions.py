@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.http import JsonResponse, HttpResponse
 from django.urls import reverse_lazy, reverse
 
-from instructor_app.models.teacher_applicant import (
+from ...models.teacher_applicant import (
     TeacherApplication,
     ApplicantRecommendation,
     ApplicantCourseReviewer,
@@ -14,7 +14,7 @@ from instructor_app.models.teacher_applicant import (
 )
 from cis.models.note import TeacherApplicationNote
 
-from instructor_app.forms.teacher_applicant import (
+from ...forms.teacher_applicant import (
     ApplicantCourseReviewerForm,
     NoteReplyForm,
     EditSchoolCourseForm,

@@ -1,6 +1,6 @@
 from django.http import JsonResponse
 
-from instructor_app.models.teacher_applicant import (
+from ...models.teacher_applicant import (
     TeacherApplicant,
     TeacherApplication,
 )

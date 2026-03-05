@@ -13,7 +13,7 @@ from django.template import Context, Template
 from django.template.loader import get_template
 
 from mailer import send_mail, send_html_mail
-from instructor_app.models.teacher_applicant import (
+from ...models.teacher_applicant import (
     TeacherApplication,
     TeacherApplicant,
     ApplicantSchoolCourse
@@ -21,7 +21,7 @@ from instructor_app.models.teacher_applicant import (
 from cis.models.customuser import CustomUser
 from cis.models.note import TeacherApplicationNote
 
-from instructor_app.settings.incomplete_si_application import incomplete_si_application
+from ...settings.incomplete_si_application import incomplete_si_application
 class Command(BaseCommand):
     
     help = 'Register reports in DB'
@@ -31,7 +31,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
 
-        from instructor_app.settings.inst_app_language import inst_app_language
+        from ...settings.inst_app_language import inst_app_language
         app_settings = inst_app_language.from_db()
         accepting_applications = True if app_settings.get('is_accepting_new', 'No') == 'Yes' else False
         

@@ -36,7 +36,7 @@ class ApplicantSchoolCourse(models.Model):
 
     @property
     def reviewers_asHTML(self):
-        from instructor_app.models.applicant_course_reviewer import ApplicantCourseReviewer
+        from .applicant_course_reviewer import ApplicantCourseReviewer
         context = {
             'reviewers': ApplicantCourseReviewer.objects.filter(
                 application_course=self

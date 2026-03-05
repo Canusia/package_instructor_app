@@ -9,7 +9,7 @@ from django.http import JsonResponse
 from cis.utils import user_has_instructor_role
 
 from cis.models.customuser import CustomUser
-from instructor_app.models.teacher_applicant import (
+from ...models.teacher_applicant import (
     TeacherApplicant,
     TeacherApplication,
     ApplicantSchoolCourse,
@@ -22,7 +22,7 @@ from cis.forms.student import(
     UserPasswordChangeForm
 )
 
-from instructor_app.forms.teacher_applicant import (
+from ...forms.teacher_applicant import (
     TeacherApplicantProfileForm,
     TeacherApplicantEditableForm,
     RecommondationForm,

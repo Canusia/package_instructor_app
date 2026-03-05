@@ -4,7 +4,7 @@ from rest_framework import routers
 
 from cis.utils import user_has_cis_role
 
-from instructor_app.views.ce.teacher_application import (
+from ..views.ce.teacher_application import (
     index as teacher_applications,
     detail as teacher_application,
     TeacherApplicantViewSet,

@@ -1,4 +1,4 @@
-from instructor_app.forms.teacher_applicant import (
+from .teacher_applicant import (
     MigrateForm,
     EditTeacherAppCourseUploadForm,
     NoteReplyForm,

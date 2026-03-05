@@ -10,14 +10,14 @@ from cis.models.note import TeacherApplicationNote
 from cis.menu import draw_menu, FACULTY_MENU
 from cis.settings.faculty_portal import faculty_portal as portal_lang
 
-from instructor_app.forms.teacher_applicant import EdBgForm, ApplicantReviewForm
-from instructor_app.models.teacher_applicant import (
+from ...forms.teacher_applicant import EdBgForm, ApplicantReviewForm
+from ...models.teacher_applicant import (
     TeacherApplication,
     ApplicantSchoolCourse,
     ApplicantCourseReviewer,
     get_fc_review_status,
 )
-from instructor_app.settings.inst_app_language import inst_app_language
+from ...settings.inst_app_language import inst_app_language
 
 logger = logging.getLogger(__name__)
 

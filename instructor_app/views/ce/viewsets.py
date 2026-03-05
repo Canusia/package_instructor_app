@@ -2,7 +2,7 @@ from django.db.models import Q
 
 from rest_framework import viewsets
 
-from instructor_app.models.teacher_applicant import (
+from ...models.teacher_applicant import (
     TeacherApplicant,
     TeacherApplication,
     ApplicantCourseReviewer,
@@ -11,7 +11,7 @@ from instructor_app.models.teacher_applicant import (
 from cis.models.course import Course
 from cis.models.term import AcademicYear
 
-from instructor_app.serializers.teacher_application import (
+from ...serializers.teacher_application import (
     TeacherApplicantSerializer,
     TeacherApplicationSerializer,
     ApplicantCourseReviewerSerializer,

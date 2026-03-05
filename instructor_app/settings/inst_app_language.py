@@ -296,7 +296,7 @@ class inst_app_language(SettingForm):
         from django.template import Context, Template
         from django.shortcuts import render, get_object_or_404
         
-        from instructor_app.forms.teacher_applicant import (
+        from ..forms.teacher_applicant import (
             TeacherApplicantProfileForm,
             SchoolCourseForm,
             RecommendationRequestForm,
@@ -421,7 +421,7 @@ class inst_app_language(SettingForm):
     def __init__(self, request, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        from instructor_app.models.teacher_applicant import TeacherApplication
+        from ..models.teacher_applicant import TeacherApplication
         self.fields['fc_review_status_label'].choices = TeacherApplication.STATUS_OPTIONS
 
         self.request = request

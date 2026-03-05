@@ -2,14 +2,14 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib import messages
 
 from cis.utils import user_has_instructor_role, user_has_highschool_admin_role
-from instructor_app.models.teacher_applicant import (
+from ..models.teacher_applicant import (
     TeacherApplication,
     ApplicantRecommendation,
 )
-from instructor_app.forms.teacher_applicant import RecommendationRequestForm
+from ..forms.teacher_applicant import RecommendationRequestForm
 from cis.menu import draw_menu, INSTRUCTOR_APP_MENU, INSTRUCTOR_MENU, HS_ADMIN_MENU
-from instructor_app.settings.inst_app_language import inst_app_language
-from instructor_app.utils import get_teacher_application
+from ..settings.inst_app_language import inst_app_language
+from ..utils import get_teacher_application
 
 
 def manage_recommendation(request, record_id):

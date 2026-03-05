@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404
 
 from cis.utils import user_has_instructor_role, user_has_highschool_admin_role, user_has_cis_role
-from instructor_app.models.teacher_applicant import TeacherApplication
+from .models.teacher_applicant import TeacherApplication
 
 
 def user_has_applicant_role(user):

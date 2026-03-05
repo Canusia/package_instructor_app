@@ -17,7 +17,7 @@ from cis.models.customuser import CustomUser
 from cis.models.highschool import HighSchool
 from cis.models.term import AcademicYear
 from cis.models.course import Course, CourseAppRequirement
-from instructor_app.models.teacher_applicant import (
+from ..models.teacher_applicant import (
     TeacherApplication, ApplicantRecommendation,
     ApplicantSchoolCourse, ApplicationUpload,
     ApplicantCourseReviewer
@@ -353,7 +353,7 @@ class EditTeacherApplicationForm(forms.Form):
         ]
 
         # Load checklist choices from settings
-        from instructor_app.settings.inst_app_language import inst_app_language
+        from ..settings.inst_app_language import inst_app_language
         app_settings = inst_app_language.from_db()
         checklist_config = app_settings.get('checklist_config')
         if checklist_config:
@@ -528,7 +528,7 @@ class EdBgForm(forms.Form):
         super().__init__(*args, **kwargs)
 
         if config is None:
-            from instructor_app.settings.inst_app_language import inst_app_language
+            from ..settings.inst_app_language import inst_app_language
             raw = inst_app_language.from_db().get('ed_bg_form_config', '{}')
             try:
                 config = json.loads(raw) if isinstance(raw, str) else (raw or {})
@@ -748,7 +748,7 @@ class RecommendationRequestForm(forms.Form):
         super().__init__(*args, **kwargs)
 
         if recommendations_needed is None:
-            from instructor_app.settings.inst_app_language import inst_app_language
+            from ..settings.inst_app_language import inst_app_language
             recommendations_needed = int(
                 inst_app_language.from_db().get('recommendations_needed', '2')
             )
@@ -1091,7 +1091,7 @@ class SchoolCourseForm(forms.Form):
     def __init__(self, teacher_application, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        from instructor_app.settings.inst_app_language import inst_app_language
+        from ..settings.inst_app_language import inst_app_language
         app_settings = inst_app_language.from_db()
         allow_new_school = app_settings.get('allow_new_school', 'No') == 'Yes'
 
@@ -1225,7 +1225,7 @@ class TeacherApplicantVerifyEmailForm(MetaFormMixin, forms.Form):
                 field.storage_path = field_name
 
         # Load dynamic labels/help_text from DB settings
-        from instructor_app.settings.inst_app_language import inst_app_language
+        from ..settings.inst_app_language import inst_app_language
         form_settings = inst_app_language.from_db()
         try:
             form_labels = json.loads(
@@ -1285,7 +1285,7 @@ class TeacherApplicantVerifyEmailForm(MetaFormMixin, forms.Form):
 
     def save(self):
         import uuid as _uuid
-        from instructor_app.models.teacher_applicant import TeacherApplicant
+        from ..models.teacher_applicant import TeacherApplicant
 
         data = self.cleaned_data
 
@@ -1572,7 +1572,7 @@ class TeacherApplicantProfileForm(MetaFormMixin, forms.Form):
 
     def _load_field_labels_from_db(self):
         """Load dynamic labels/help_text from DB settings"""
-        from instructor_app.settings.inst_app_language import inst_app_language
+        from ..settings.inst_app_language import inst_app_language
         try:
             form_settings = inst_app_language.from_db()
             form_labels = json.loads(
@@ -1703,7 +1703,7 @@ class HSAdminAddTeacherForm(TeacherApplicantProfileForm):
 
     def save(self, applicant=None):
         """Create CustomUser + TeacherApplicant (pre-verified). Returns the TeacherApplicant."""
-        from instructor_app.models.teacher_applicant import TeacherApplicant
+        from ..models.teacher_applicant import TeacherApplicant
         user = CustomUser()
         self._save_fields_to_models(user=user, commit=False)
         user.username = user.email

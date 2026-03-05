@@ -9,7 +9,7 @@ from django.http import JsonResponse
 from cis.utils import user_has_instructor_role, user_has_highschool_admin_role
 
 from cis.models.customuser import CustomUser
-from instructor_app.models.teacher_applicant import (
+from ..models.teacher_applicant import (
     TeacherApplicant,
     TeacherApplication,
     ApplicantSchoolCourse,
@@ -22,15 +22,15 @@ from cis.forms.student import(
     UserPasswordChangeForm
 )
 
-from instructor_app.forms.teacher_applicant import (
+from ..forms.teacher_applicant import (
     TeacherApplicantProfileForm,
     TeacherApplicantEditableForm,
     RecommondationForm,
     AppUploadForm
 )
 
-from instructor_app.settings.inst_app_language import inst_app_language
-from instructor_app.utils import get_teacher_application
+from ..settings.inst_app_language import inst_app_language
+from ..utils import get_teacher_application
 
 def manage_password(request):
 

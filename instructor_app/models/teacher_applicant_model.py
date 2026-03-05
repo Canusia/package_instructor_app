@@ -4,7 +4,7 @@ from django.db import models
 from django.urls import reverse_lazy
 from django.contrib.auth.models import Group
 
-from instructor_app.email import send_notification
+from ..email import send_notification
 from cis.models.customuser import CustomUser
 
 logger = logging.getLogger(__name__)
@@ -58,7 +58,7 @@ class TeacherApplicant(models.Model):
         )
 
     def send_verification_request_email(self):
-        from instructor_app.settings.inst_app_language import inst_app_language
+        from ..settings.inst_app_language import inst_app_language
 
         email_settings = inst_app_language.from_db()
         template_str = email_settings.get('verification_email', '')
@@ -76,7 +76,7 @@ class TeacherApplicant(models.Model):
         """
         Returns a TeacherApplicant object
         """
-        from instructor_app.models.teacher_application import TeacherApplication
+        from .teacher_application import TeacherApplication
 
         user = CustomUser()
         user.first_name = tapp_form.cleaned_data['first_name']
