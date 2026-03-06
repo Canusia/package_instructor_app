@@ -82,7 +82,7 @@ def review_application(request, record_id):
         else:
             logger.warning('Review form validation failed: %s', review_form.errors)
 
-    menu = draw_menu(FACULTY_MENU, 'manage_app', 'faculty')
+    menu = draw_menu(FACULTY_MENU, 'manage_app', '', 'faculty')
     courses = ApplicantCourseReviewer.objects.filter(
         reviewer=user,
         application_course__teacherapplication=teacher_application
