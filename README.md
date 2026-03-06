@@ -127,6 +127,128 @@ The `future_sections` app can automatically create teacher applications when HS 
 | `create_new_instructor_app` | Which `TeacherCourseCertificate` statuses trigger application creation |
 | `default_instructor_app_status` | Initial status for auto-created applications (e.g., "In Progress") |
 
+## Installation
+
+### 1. Add to `INSTALLED_APPS`
+
+In `settings.py`, use the dual app config pattern:
+
+```python
+# DEBUG=True (development — submodule nested path)
+'instructor_app.instructor_app.apps.DevInstructorAppConfig'
+
+# DEBUG=False (production — pip-installed flat path)
+'instructor_app.apps.InstructorAppConfig'
+```
+
+### 2. Include URL patterns
+
+In your root `urls.py`:
+
+```python
+path('instructor_app/', include('instructor_app.urls.applicant')),
+path('instructor/instructor_apps/', include('instructor_app.urls.instructor')),
+path('faculty/instructor_apps/', include('instructor_app.urls.faculty')),
+path('ce/instructor_apps/', include('instructor_app.urls.cis')),
+```
+
+### 3. Add template link for applicants
+
+In `cis/templates/cis/index/instructor.html`, add the application start button:
+
+```html
+{% if accepting_applications %}
+<div class="col-md-6 col-sm-12 mt-2">
+    <a href="{% url 'applicant_app:start_app' %}"
+        class="btn btn-lg btn-block btn-primary">
+        <i class="fas fas-light fa-plus"></i>&nbsp;&nbsp;Start New Application
+    </a>
+</div>
+{% else %}
+    {{ closed_message|safe }}
+{% endif %}
+```
+
+### 4. Add menu items in `settings.py` (`MY_CE`)
+
+**CE Staff menu:**
+```json
+{
+    "label": "Instructor Applicants",
+    "name": "all_applicants",
+    "url": "ce_instructor_app:teacher_applications"
+}
+```
+
+**Applicant menu:**
+```json
+[
+    {
+        "type": "nav-item",
+        "icon": "fas fa-fw fa-tachometer-alt",
+        "name": "home",
+        "label": "Home",
+        "url": "applicant_app:dashboard"
+    },
+    {
+        "type": "nav-item",
+        "icon": "fas fa-fw fa-box",
+        "label": "Manage Application",
+        "name": "applicant_app"
+    },
+    {
+        "type": "nav-item",
+        "icon": "fas fa-fw fa-user",
+        "name": "profile",
+        "label": "My Profile",
+        "url": "applicant_app:profile"
+    },
+    {
+        "type": "nav-item",
+        "icon": "fas fa-fw fa-key",
+        "name": "manage_password",
+        "label": "Manage Password",
+        "url": "applicant_app:manage_password"
+    },
+    {
+        "type": "nav-item",
+        "icon": "fas fa-fw fa-sign-out-alt",
+        "name": "logout",
+        "label": "Logout",
+        "url": "logout"
+    }
+]
+```
+
+**HS Admin menu:**
+```json
+{
+    "type": "nav-item",
+    "icon": "fas fa-fw fa-file-alt",
+    "name": "instructor_apps",
+    "label": "New Instructor Applications",
+    "url": "highschool_admin_app:highschool_admin_apps"
+}
+```
+
+**Faculty menu:**
+```json
+{
+    "type": "nav-item",
+    "icon": "fas fa-fw fa-box",
+    "label": "Teacher Applications",
+    "name": "applications",
+    "url": "faculty_app:instructor_apps"
+}
+```
+
+### 5. Register settings and run migrations
+
+```bash
+python manage.py migrate
+python manage.py register_settings
+```
+
 ## Management Commands
 
 ```bash
