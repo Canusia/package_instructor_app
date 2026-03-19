@@ -4,6 +4,16 @@ from rest_framework import routers
 
 from cis.utils import user_has_cis_role
 
+from ..views.ce.course_requirements import (
+    CourseAppRequirementViewSet,
+    do_bulk_action as course_req_bulk_actions,
+)
+from ..views.ce.course_administrators import (
+    CourseAdministratorViewSet,
+    manage_course_administrator_role,
+    delete_course_administrator_role,
+)
+
 from ..views.ce.teacher_application import (
     index as teacher_applications,
     detail as teacher_application,
@@ -35,6 +45,8 @@ router_viewsets = {
     'teacher_application': TeacherApplicationViewSet,
     'teacher_application_reviewers': TeacherApplicationReviewerViewSet,
     'applicant_course_list': ApplicantCourseListViewSet,
+    'course-requirements': CourseAppRequirementViewSet,
+    'course_administrator': CourseAdministratorViewSet,
 }
 
 for router_key in router_viewsets.keys():
@@ -119,5 +131,19 @@ urlpatterns = [
         'teacher_application/send_approval_email/<uuid:record_id>',
         user_passes_test(user_has_cis_role, login_url='/')(send_approval_email),
         name='send_approval_email'
+    ),
+
+    # Course requirements
+    path(
+        'courses/req_bulk_actions',
+        user_passes_test(user_has_cis_role, login_url='/')(course_req_bulk_actions),
+        name='course_req_bulk_actions'
+    ),
+
+    # Course administrators
+    path(
+        'course/administrator/delete/<uuid:record_id>',
+        user_passes_test(user_has_cis_role, login_url='/')(delete_course_administrator_role),
+        name='delete_course_administrator_role'
     ),
 ]
