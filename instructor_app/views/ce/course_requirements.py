@@ -5,7 +5,7 @@ from django.urls import reverse
 from rest_framework import viewsets
 
 from cis.models.course import CourseAppRequirement
-from cis.forms.course import (
+from ...forms.course_requirements import (
     AddCourseAppRequirementForm,
     UpdateCourseRequirementForm,
     DeleteCourseRequirementForm,

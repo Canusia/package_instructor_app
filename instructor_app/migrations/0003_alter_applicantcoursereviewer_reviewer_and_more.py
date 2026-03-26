@@ -8,7 +8,6 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('cis', '0027_customuser_last_updated_on_student_last_updated_on_and_more'),
         ('instructor_app', '0002_rename_fc_review_status'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
