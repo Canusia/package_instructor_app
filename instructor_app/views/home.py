@@ -202,6 +202,7 @@ def review_application(request, record_id):
             'uploads': teacher_application.uploads(),
             'accepting_applications': accepting_applications,
             'closed_message': closed_message,
+            'recommendations_needed': int(app_settings.get('recommendations_needed') or 0),
             'certification_text': app_settings.get('certification_text', ''),
             'app_not_editable_message': app_settings.get('app_not_editable_message', '') if not teacher_application.can_edit() else '',
         }

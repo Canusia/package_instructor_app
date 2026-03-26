@@ -49,7 +49,9 @@ instructor_app/
 │       ├── viewsets.py               # DRF ViewSets (API)
 │       ├── detail.py                 # Application detail view
 │       ├── actions.py                # CRUD/AJAX action endpoints
-│       └── bulk_actions.py           # Bulk operations
+│       ├── bulk_actions.py           # Bulk operations
+│       ├── incomplete_notifications.py  # Preview/send incomplete-app reminders
+│       └── pending_review_notifications.py # Preview/send reviewer reminders
 ├── forms/
 │   └── teacher_applicant.py          # All forms
 ├── serializers/
@@ -75,11 +77,14 @@ instructor_app/
 │   └── teacher_applications.py       # Status change & notification handlers
 ├── services/
 │   ├── import_teacher.py             # Convert applicant → Teacher
-│   └── pdf.py                        # PDF generation
+│   ├── pdf.py                        # PDF generation
+│   ├── incomplete_notifications.py   # Logic for incomplete-app reminders
+│   └── pending_review_notifications.py # Logic for pending-review reminders
 ├── email.py                          # render_email / send_notification helpers
 ├── utils.py                          # Role checks & access control
 ├── management/commands/
-│   └── notify_incomplete_si_app.py   # Cron: remind incomplete applicants
+│   ├── notify_incomplete_si_app.py   # Cron: remind incomplete applicants
+│   └── notify_si_pending_review.py   # Cron: remind pending reviewers
 └── apps.py                           # App config + settings registration
 ```
 
@@ -94,6 +99,7 @@ Three setting groups are registered in `apps.py` and editable via the admin UI:
 | `recommendations_needed` | Number of recommendations required (0–3) |
 | `allow_new_school` | Allow applicants to add unlisted high schools |
 | `fc_review_status_label` | Custom label for the "Ready for Review" status |
+| `reviewer_role_config` | JSON dict of `{"RoleName": weight}` controlling which `CourseAdministrator` roles are auto-added as reviewers and in what order (lower weight = added first) when an application reaches the faculty review trigger status. Defaults to `{"Faculty": 1}`. |
 | `checklist_config` | JSON config for pre-approval checklist items |
 
 Also configures page introductions, form field labels, and help text for every applicant-facing screen.
@@ -177,8 +183,25 @@ In `cis/templates/cis/index/instructor.html`, add the application start button:
     "label": "Instructor Applicants",
     "name": "all_applicants",
     "url": "ce_instructor_app:teacher_applications"
+},
+{
+    "label": "Incomplete App Notifications",
+    "name": "incomplete_notifications",
+    "url": "ce_instructor_app:incomplete_notifications"
+},
+{
+    "label": "Pending Review Notifications",
+    "name": "pending_review_notifications",
+    "url": "ce_instructor_app:pending_review_notifications"
 }
 ```
+
+**CE Staff notification preview URLs:**
+
+| View | URL | Description |
+|------|-----|-------------|
+| Incomplete app notifications | `/ce/instructor_apps/notifications/incomplete/` | Preview/send reminders to applicants with missing steps |
+| Pending review notifications | `/ce/instructor_apps/notifications/pending_review/` | Preview/send reminders to reviewers with outstanding reviews |
 
 **Applicant menu:**
 ```json
@@ -251,7 +274,18 @@ python manage.py register_settings
 
 ## Management Commands
 
+Both commands support `--dry-run` (prints what would happen, sends nothing) and `-t` for cron signal logging.
+
 ```bash
 # Notify applicants with incomplete applications (runs via cron_jobs)
-docker exec django_web_setonhill python webapp/manage.py notify_incomplete_si_app
+python manage.py notify_incomplete_si_app -t "2026-03-26 08:00:00"
+python manage.py notify_incomplete_si_app --dry-run
+
+# Remind faculty reviewers with outstanding course application reviews
+python manage.py notify_si_pending_review -t "2026-03-26 08:00:00"
+python manage.py notify_si_pending_review --dry-run
 ```
+
+Both commands can also be triggered manually via the CE staff portal:
+- Incomplete app notifications: `/ce/instructor_apps/notifications/incomplete/`
+- Pending review notifications: `/ce/instructor_apps/notifications/pending_review/`

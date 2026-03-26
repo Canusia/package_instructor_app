@@ -69,6 +69,8 @@ All models use UUID primary keys. File models have post_delete signals to auto-d
 - **`views/manage_ed_bg.py`** - Education background with dynamic EducationEntryFormSet
 - **`views/manage_recommendation.py`** - Request recommendation letters (1-3 recommenders)
 - **`views/ce/`** - CE staff portal: index (DataTables list), detail (full editing), actions (PDF, ZIP, approval, reviewer management, bulk operations), viewsets (REST API)
+  - **`views/ce/incomplete_notifications.py`** - Preview/trigger incomplete-application notifications → `/ce/instructor_apps/notifications/incomplete/`
+  - **`views/ce/pending_review_notifications.py`** - Preview/trigger pending faculty review reminders → `/ce/instructor_apps/notifications/pending_review/`
 - **`views/faculty/home.py`** - Faculty review: list assigned applications, review form with course decisions
 - **`views/highschool_admin/home.py`** - HS admin: list school's applications, add new teacher
 - **`views/instructor/home.py`** - Instructor: list own applications
@@ -117,12 +119,17 @@ Three setting modules registered via `CONFIGURATORS`:
 
 ## Management Commands
 
-- **notify_incomplete_si_app** - Cron job sending reminders to applicants with incomplete applications. Checks frequency, finds missing items, re-sends recommendation requests, logs notes.
+Both commands support `--dry-run` (prints what would happen, sends nothing) and `-t "YYYY-MM-DD HH:MM:SS"` for cron signal logging.
+
+- **`notify_incomplete_si_app`** - Cron job reminding applicants with incomplete applications. Delegates to `services/incomplete_notifications.py`.
+- **`notify_si_pending_review`** - Cron job reminding faculty reviewers with outstanding course reviews. Delegates to `services/pending_review_notifications.py`.
 
 ## Services
 
 - **`services/import_teacher.py`** - `import_as_teacher()`: Converts TeacherApplication → Teacher + TeacherHighSchool + TeacherCourseCertificate + copies uploads
 - **`services/pdf.py`** - `application_as_pdf()`: Renders application as PDF via pdfkit
+- **`services/incomplete_notifications.py`** - `get_pending_notifications()` / `send_notifications()`: Core logic for incomplete-application reminders. Used by the cron command, CE preview view, and report.
+- **`services/pending_review_notifications.py`** - `get_pending_review_notifications()` / `send_pending_review_notifications()`: Core logic for faculty reviewer reminders. Used by the cron command, CE preview view, and report.
 
 ## Email (`email.py`)
 

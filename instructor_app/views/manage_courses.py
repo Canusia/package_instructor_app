@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.db import IntegrityError
 from django.contrib import messages
 from django.http import JsonResponse
+from django.urls import reverse
 from django.utils.safestring import mark_safe
 
 from cis.utils import user_has_instructor_role, user_has_highschool_admin_role
@@ -88,7 +89,7 @@ def manage_course(request, record_id):
     else:
         menu = draw_menu(INSTRUCTOR_APP_MENU, 'manage_app', '', 'applicant')
 
-    api_url = mark_safe(f'/ce/api/applicant_course_list?format=datatables&teacher_application_id={record_id}')
+    api_url = mark_safe(reverse('ce_instructor_app:applicant_course_list-list') + f'?format=datatables&teacher_application_id={record_id}')
 
     return render(
         request,

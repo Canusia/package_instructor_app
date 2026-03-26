@@ -53,7 +53,7 @@
                     </h5>
                     <div class="card-text">
                         {% if record.status == 'Submitted' %}
-                        <p class="alert alert-info">If the application is ready for Faculty review change the status to 'Ready for FC Review'. This will automatically add and notify reviewers.<br><br>You can email the applicant via the 'Notes' tab if you need clarification or additional information.</p>
+                        <p class="alert alert-info">If the application is ready for Faculty review change the status to '{{ fc_review_status }}'. This will automatically add and notify reviewers.<br><br>You can email the applicant via the 'Notes' tab if you need clarification or additional information.</p>
                         {% endif %}
 
                         {% if record.status == fc_review_status %}

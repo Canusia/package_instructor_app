@@ -71,6 +71,14 @@ class ApplicantCourseReviewer(models.Model):
         )
 
     @property
+    def mentor_user(self):
+        mentor_id = (self.misc_info or {}).get('mentor_id')
+        if not mentor_id:
+            return None
+        from cis.models.customuser import CustomUser
+        return CustomUser.objects.filter(pk=mentor_id).first()
+
+    @property
     def get_status_history(self):
         if not self.status_changed_on:
             self.status_changed_on = {}

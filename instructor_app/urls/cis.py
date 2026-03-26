@@ -14,6 +14,9 @@ from ..views.ce.course_administrators import (
     delete_course_administrator_role,
 )
 
+from ..views.ce.incomplete_notifications import preview as incomplete_notifications_preview
+from ..views.ce.pending_review_notifications import preview as pending_review_notifications_preview
+
 from ..views.ce.teacher_application import (
     index as teacher_applications,
     detail as teacher_application,
@@ -131,6 +134,20 @@ urlpatterns = [
         'teacher_application/send_approval_email/<uuid:record_id>',
         user_passes_test(user_has_cis_role, login_url='/')(send_approval_email),
         name='send_approval_email'
+    ),
+
+    # Incomplete notifications preview
+    path(
+        'notifications/incomplete/',
+        user_passes_test(user_has_cis_role, login_url='/')(incomplete_notifications_preview),
+        name='incomplete_notifications'
+    ),
+
+    # Pending review notifications preview
+    path(
+        'notifications/pending_review/',
+        user_passes_test(user_has_cis_role, login_url='/')(pending_review_notifications_preview),
+        name='pending_review_notifications'
     ),
 
     # Course requirements

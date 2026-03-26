@@ -14,6 +14,22 @@ from cis.models.term import Term, AcademicYear
 from cis.models.settings import Setting
 from cis.validators import validate_json
 
+FACULTY_REVIEW_TEACHER_INFO_DEFAULT = (
+    '<div class="row mb-2 p-2 border-bottom">'
+    '<div class="col-md-2"><span class="profile_label">Name</span></div>'
+    '<div class="col-md-4">{{ record.user }}</div>'
+    '<div class="col-md-2"><span class="profile_label">Email</span></div>'
+    '<div class="col-md-4">{{ record.user.email }}</div>'
+    '</div>'
+    '<div class="row mb-2 p-2">'
+    '<div class="col-md-2"><span class="profile_label">Phone</span></div>'
+    '<div class="col-md-4">{{ record.user.primary_phone }}</div>'
+    '<div class="col-md-2"><span class="profile_label">Address</span></div>'
+    '<div class="col-md-4">{{ record.user.address1 }}<br>'
+    '{{ record.user.city }}, {{ record.user.state }} {{ record.user.postal_code }}</div>'
+    '</div>'
+)
+
 class SettingForm(forms.Form):
     class Media:
         js = ('js/checklist_settings.js',)
@@ -226,6 +242,36 @@ class SettingForm(forms.Form):
         widget=forms.Select(attrs={'class': 'col-md-4 col-sm-12'}),
     )
 
+    reviewer_role_config = forms.CharField(
+        max_length=None,
+        required=False,
+        validators=[validate_json],
+        widget=forms.HiddenInput(),
+        label="Reviewer Role Configuration",
+    )
+
+    review_form_config = forms.CharField(
+        max_length=None,
+        required=False,
+        validators=[validate_json],
+        widget=forms.HiddenInput(),
+        label="Faculty Review Form Configuration",
+    )
+
+    faculty_review_teacher_info = forms.CharField(
+        max_length=None,
+        required=False,
+        widget=forms.Textarea,
+        label="Faculty Review — Teacher Info Template",
+        initial=FACULTY_REVIEW_TEACHER_INFO_DEFAULT,
+        help_text=(
+            'Django template rendered in the Teacher section of the faculty review page. '
+            'Context variable: <code>record</code> (TeacherApplication). '
+            'Any field on the model is accessible; missing attributes render as empty string. '
+            'Leave blank to use the default.'
+        ),
+    )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -285,6 +331,9 @@ class SettingForm(forms.Form):
             'ed_bg_form_config': self.cleaned_data.get('ed_bg_form_config'),
             'checklist_config': self.cleaned_data.get('checklist_config'),
             'fc_review_status_label': self.cleaned_data.get('fc_review_status_label', 'Ready for Review'),
+            'reviewer_role_config': self.cleaned_data.get('reviewer_role_config', '{}'),
+            'review_form_config': self.cleaned_data.get('review_form_config', '{}'),
+            'faculty_review_teacher_info': self.cleaned_data.get('faculty_review_teacher_info', ''),
         }
 
 class inst_app_language(SettingForm):
@@ -579,17 +628,185 @@ class inst_app_language(SettingForm):
             '</script>'
         )
 
-        # Build layout with config UI inserted before the hidden field
+        # Build reviewer role config visual UI
+        from cis.models.course import CourseAdministrator
+        role_options = CourseAdministrator.ROLE_OPTIONS
+
+        rrc_rows_html = ""
+        for role_value, role_label in role_options:
+            rrc_rows_html += (
+                '<tr>'
+                f'<td>{role_label}</td>'
+                '<td class="text-center">'
+                f'<input type="checkbox" class="rrc-include" data-role="{role_value}">'
+                '</td>'
+                '<td>'
+                f'<input type="number" class="form-control form-control-sm rrc-weight" '
+                f'data-role="{role_value}" min="1" placeholder="—" style="width:80px;">'
+                '</td>'
+                '</tr>'
+            )
+
+        reviewer_role_config_html = (
+            '<div id="reviewer-role-config-ui" class="card mb-3">'
+            '<div class="card-header"><h5 class="mb-0">Reviewer Roles &amp; Order</h5></div>'
+            '<div class="card-body">'
+            '<p class="text-muted small">Select which course administrator roles are added as reviewers '
+            'when an application reaches the faculty review trigger status. '
+            'The weight controls the order — lower weight is added first.</p>'
+            '<table class="table table-sm table-bordered">'
+            '<thead><tr>'
+            '<th>Role</th>'
+            '<th class="text-center" style="width:80px">Include</th>'
+            '<th style="width:120px">Weight</th>'
+            '</tr></thead>'
+            '<tbody>'
+        )
+        reviewer_role_config_html += rrc_rows_html
+        reviewer_role_config_html += (
+            '</tbody></table>'
+            '</div></div>'
+        )
+
+        reviewer_role_config_js = (
+            '<script>'
+            'function initReviewerRoleConfig(){'
+            '  var $hidden=$("input[name=\'reviewer_role_config\']");'
+            '  if(!$hidden.length)return;'
+            '  var $ui=$("#reviewer-role-config-ui");'
+            '  if(!$ui.length)return;'
+            '  if($ui.data("rrc-init"))return;'
+            '  $ui.data("rrc-init",true);'
+            '  var config={};'
+            '  try{config=JSON.parse($hidden.val()||"{}");}catch(e){config={};}'
+            '  $ui.find(".rrc-include").each(function(){'
+            '    var role=$(this).data("role");'
+            '    $(this).prop("checked",config.hasOwnProperty(role));'
+            '  });'
+            '  $ui.find(".rrc-weight").each(function(){'
+            '    var role=$(this).data("role");'
+            '    if(config.hasOwnProperty(role))$(this).val(config[role]);'
+            '    $(this).prop("disabled",!config.hasOwnProperty(role));'
+            '  });'
+            '  function sync(){'
+            '    var result={};'
+            '    $ui.find(".rrc-include:checked").each(function(){'
+            '      var role=$(this).data("role");'
+            '      var w=parseInt($ui.find(".rrc-weight[data-role=\'"+role+"\']").val())||999;'
+            '      result[role]=w;'
+            '    });'
+            '    $hidden.val(JSON.stringify(result));'
+            '  }'
+            '  $ui.on("change",".rrc-include",function(){'
+            '    var role=$(this).data("role");'
+            '    var $w=$ui.find(".rrc-weight[data-role=\'"+role+"\']");'
+            '    $w.prop("disabled",!$(this).is(":checked"));'
+            '    if(!$(this).is(":checked"))$w.val("");'
+            '    sync();'
+            '  });'
+            '  $ui.on("input",".rrc-weight",sync);'
+            '  $hidden.closest("form").on("submit",sync);'
+            '}'
+            '$(document).ready(function(){initReviewerRoleConfig();});'
+            '$(document).ajaxComplete(function(){initReviewerRoleConfig();});'
+            '</script>'
+        )
+
+        # Build faculty review form config visual UI
+        review_form_fields = [
+            ('decision', 'Your Decision/Recommendation'),
+            ('comment', 'Comment'),
+            ('mentor', 'Mentor'),
+        ]
+
+        rfc_rows_html = ''
+        for field_name, default_label in review_form_fields:
+            rfc_rows_html += (
+                '<tr>'
+                f'<td>{default_label}</td>'
+                '<td class="text-center">'
+                f'<input type="checkbox" class="rfc-visible" data-field="{field_name}">'
+                '</td>'
+                '<td>'
+                f'<input type="text" class="form-control form-control-sm rfc-label" '
+                f'data-field="{field_name}" placeholder="{default_label}">'
+                '</td>'
+                '</tr>'
+            )
+
+        review_form_config_html = (
+            '<div id="review-form-config-ui" class="card mb-3">'
+            '<div class="card-header"><h5 class="mb-0">Faculty Review Form Fields</h5></div>'
+            '<div class="card-body">'
+            '<p class="text-muted small">Select which fields appear on the faculty review form and optionally customise their labels. '
+            'The <em>decision</em> field is required; unchecking it will hide it only if another field remains. '
+            'The <em>mentor</em> field shows a dropdown of active Faculty/Visitor course administrators.</p>'
+            '<table class="table table-sm table-bordered">'
+            '<thead><tr>'
+            '<th>Field</th>'
+            '<th class="text-center" style="width:80px">Show</th>'
+            '<th style="width:250px">Custom Label</th>'
+            '</tr></thead>'
+            '<tbody>'
+        )
+        review_form_config_html += rfc_rows_html
+        review_form_config_html += '</tbody></table></div></div>'
+
+        review_form_config_js = (
+            '<script>'
+            'function initReviewFormConfig(){'
+            '  var $hidden=$("input[name=\'review_form_config\']");'
+            '  if(!$hidden.length)return;'
+            '  var $ui=$("#review-form-config-ui");'
+            '  if(!$ui.length)return;'
+            '  if($ui.data("rfc-init"))return;'
+            '  $ui.data("rfc-init",true);'
+            '  var config={};'
+            '  try{config=JSON.parse($hidden.val()||"{}");}catch(e){config={};}'
+            '  $ui.find(".rfc-visible").each(function(){'
+            '    var f=$(this).data("field");'
+            '    var visible=config[f]?config[f].visible:f!=="mentor";'
+            '    $(this).prop("checked",visible);'
+            '  });'
+            '  $ui.find(".rfc-label").each(function(){'
+            '    var f=$(this).data("field");'
+            '    if(config[f]&&config[f].label)$(this).val(config[f].label);'
+            '  });'
+            '  function sync(){'
+            '    var result={};'
+            '    $ui.find(".rfc-visible").each(function(){'
+            '      var f=$(this).data("field");'
+            '      var lbl=$ui.find(".rfc-label[data-field=\'"+f+"\']").val().trim();'
+            '      result[f]={visible:$(this).is(":checked"),label:lbl};'
+            '    });'
+            '    $hidden.val(JSON.stringify(result));'
+            '  }'
+            '  $ui.on("change",".rfc-visible",sync);'
+            '  $ui.on("input",".rfc-label",sync);'
+            '  $hidden.closest("form").on("submit",sync);'
+            '}'
+            '$(document).ready(function(){initReviewFormConfig();});'
+            '$(document).ajaxComplete(function(){initReviewFormConfig();});'
+            '</script>'
+        )
+
+        # Build layout with config UIs inserted before their hidden fields
         field_keys = list(self.fields.keys())
         layout_fields = []
         for key in field_keys:
             if key == 'ed_bg_form_config':
                 layout_fields.append(HTML(ed_bg_config_html))
+            if key == 'reviewer_role_config':
+                layout_fields.append(HTML(reviewer_role_config_html))
+            if key == 'review_form_config':
+                layout_fields.append(HTML(review_form_config_html))
             layout_fields.append(key)
 
         self.helper.layout = Layout(
             HTML(toggle_js),
             HTML(ed_bg_js),
+            HTML(reviewer_role_config_js),
+            HTML(review_form_config_js),
             *layout_fields
         )
 
@@ -617,6 +834,9 @@ class inst_app_language(SettingForm):
             'confirm_verify_intro': '<p>Click the button below to confirm your email address and continue with your application.</p>',
             'certification_text': 'CERTIFICATION OF APPLICANT: I certify that there are no misrepresentations or falsifications in my answers to the questions above. I am aware that any misstatements disclosed through investigation will constitute sufficient grounds, disqualification and/or dismissal from employment.',
             'ed_bg_form_config': '{}',
+            'reviewer_role_config': '{"Faculty": 1}',
+            'review_form_config': '{"decision": {"visible": true, "label": ""}, "comment": {"visible": true, "label": ""}, "mentor": {"visible": false, "label": ""}}',
+            'faculty_review_teacher_info': FACULTY_REVIEW_TEACHER_INFO_DEFAULT,
         }
 
         try:

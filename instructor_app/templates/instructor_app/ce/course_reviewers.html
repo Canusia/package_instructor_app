@@ -30,6 +30,9 @@
                         <button class="btn btn-sm btn-primary mt-1 save-reviewer-status" data-id="{{r.id}}">Save</button>
                         <button class="btn btn-sm btn-secondary mt-1 cancel-reviewer-status" data-id="{{r.id}}">Cancel</button>
                     </span>
+                    {% if r.mentor_user %}
+                    <div class="mt-1"><small class="text-muted">Mentor:</small> <small>{{ r.mentor_user }}</small></div>
+                    {% endif %}
                 </td>
                 <td>{{r.misc_info.reviewer_note|safe}}</td>
                 <td class="text-right">

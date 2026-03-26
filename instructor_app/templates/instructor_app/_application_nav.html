@@ -59,14 +59,17 @@
 </style>
 
 {% active_step_number active_step as current_step %}
+{% recommendations_required as show_rec_step %}
 
 <ul class="step-nav">
     <li class="{% if current_step == 1 %}step-active{% elif current_step > 1 %}step-completed{% else %}step-upcoming{% endif %}">
         <a href="{% url 'applicant_app:manage_courses' teacher_application.id %}">Select Course(s)</a>
     </li>
+    {% if show_rec_step %}
     <li class="{% if current_step == 2 %}step-active{% elif current_step > 2 %}step-completed{% else %}step-upcoming{% endif %}">
         <a href="{% url 'applicant_app:manage_recommendation' teacher_application.id %}">Manage Recommendation</a>
     </li>
+    {% endif %}
     <li class="{% if current_step == 3 %}step-active{% elif current_step > 3 %}step-completed{% else %}step-upcoming{% endif %}">
         <a href="{% url 'applicant_app:manage_ed_bg' teacher_application.id %}">Manage Ed. Background</a>
     </li>

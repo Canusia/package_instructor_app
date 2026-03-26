@@ -39,7 +39,7 @@
             <div class="card bg-info sticky-top text-white">
                 <div class="card-body">
                     <h5 class="card-title">Course(s)</h5>
-                    {% for course_review in courses %}
+                    {% for course_review, review_form in courses_with_forms %}
                     <div>
                         <h4 class="card-title">
                             {{ course_review.application_course.course }}:&nbsp;{{ course_review.application_course.course.title }}
@@ -153,35 +153,7 @@
 
                     <h5 class="card-title mt-5">Teacher</h5>
                     <div class="profile">
-                        <div class="row mb-2 p-2 border-bottom">
-                            <div class="col-md-2">
-                                <span class="profile_label">Name</span>
-                            </div>
-                            <div class="col-md-4">
-                                {{ record.user }}
-                            </div>
-                            <div class="col-md-2">
-                                <span class="profile_label">Email</span>
-                            </div>
-                            <div class="col-md-4">
-                                {{ record.user.email }}
-                            </div>
-                        </div>
-                        <div class="row mb-2 p-2">
-                            <div class="col-md-2">
-                                <span class="profile_label">Phone</span>
-                            </div>
-                            <div class="col-md-4">
-                                {{ record.user.primary_phone }}
-                            </div>
-                            <div class="col-md-2">
-                                <span class="profile_label">Address</span>
-                            </div>
-                            <div class="col-md-4">
-                                {{ record.user.address1 }}<br>{{ record.user.city }}, {{ record.user.state }}
-                                {{ record.user.postal_code }}
-                            </div>
-                        </div>
+                        {{ teacher_info_html|safe }}
                     </div>
 
                     <h5 class="card-title mt-5">High School</h5>

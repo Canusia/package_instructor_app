@@ -47,6 +47,7 @@
                     <p class="alert alert-danger">No courses have been selected</p>
                     {% endif %}
 
+                    {% if recommendations_needed %}
                     <hr>
                     <h3 class="mt-5 card-title">Recommendations {% if teacher_application.can_edit %}<small><a
                                 href="{% url 'applicant_app:manage_recommendation' teacher_application.id %}">Edit</a></small>{% endif %}
@@ -81,8 +82,7 @@
                         {% endfor %}
                     </table>
                     {% endif %}
-
-                    
+                    {% endif %}
 
                     <hr>
                     <h3 class="mt-5 card-title">Education Background {% if teacher_application.can_edit %}<small><a

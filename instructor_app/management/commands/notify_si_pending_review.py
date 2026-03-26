@@ -1,19 +1,21 @@
 """
-Management command: notify_incomplete_si_app
+Management command: notify_si_pending_review
 =============================================
 
-Sends reminder emails to applicants with in-progress instructor applications
-that are missing required steps. Core logic lives in:
-    instructor_app/services/incomplete_notifications.py
+Sends reminder emails to faculty reviewers who have been assigned to a course
+application but have not yet submitted a review (status '---').
+
+Core logic lives in:
+    instructor_app/services/pending_review_notifications.py
 
 Usage
 -----
 Normal run (scheduled via cron):
-    python manage.py notify_incomplete_si_app -t "2026-03-26 08:00:00"
+    python manage.py notify_si_pending_review -t "2026-03-26 08:00:00"
 
 Dry run (prints who would be notified, sends nothing):
-    python manage.py notify_incomplete_si_app --dry-run
-    python manage.py notify_incomplete_si_app -t "2026-03-26 08:00:00" --dry-run
+    python manage.py notify_si_pending_review --dry-run
+    python manage.py notify_si_pending_review -t "2026-03-26 08:00:00" --dry-run
 
 The -t / --time argument is required for cron signal logging. When omitted
 it defaults to the current time.
@@ -26,12 +28,15 @@ from django.core.management.base import BaseCommand
 
 from cis.signals.crontab import cron_task_done, cron_task_started
 
-from ...services.incomplete_notifications import get_pending_notifications, send_notifications
+from ...services.pending_review_notifications import (
+    get_pending_review_notifications,
+    send_pending_review_notifications,
+)
 
 
 class Command(BaseCommand):
 
-    help = 'Notify applicants with incomplete instructor applications'
+    help = 'Remind faculty reviewers with outstanding course application reviews'
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -44,7 +49,7 @@ class Command(BaseCommand):
             '--dry-run',
             action='store_true',
             default=False,
-            help='Print who would be notified without sending emails or updating records.',
+            help='Print who would be notified without sending emails or saving notes.',
         )
 
     def handle(self, *args, **kwargs):
@@ -60,11 +65,10 @@ class Command(BaseCommand):
             scheduled_time=time,
         )
 
-        pending = get_pending_notifications()
+        pending = get_pending_review_notifications()
 
-        if isinstance(pending, str):
-            # Received a skip-reason string
-            summary = pending
+        if not pending:
+            summary = 'No pending reviewer notifications'
             self.stdout.write(summary)
             cron_task_done.send(
                 sender=self.__class__,
@@ -77,10 +81,10 @@ class Command(BaseCommand):
 
         if dry_run:
             for entry in pending:
-                app = entry['app']
                 self.stdout.write(
-                    f'  Would notify: {app.user} → {entry["to_email"]}\n'
-                    f'  Missing: {", ".join(entry["missing_items"])}\n'
+                    f'  Would notify: {entry["reviewer_name"]} <{entry["reviewer_email"]}>\n'
+                    f'  Course: {entry["course"]}  |  Applicant: {entry["teacher_name"]}\n'
+                    f'  Assigned on: {entry["assigned_on"]}\n'
                 )
             summary = f'[DRY RUN] {len(pending)} notification(s) would be sent'
             self.stdout.write(self.style.SUCCESS(summary))
@@ -93,7 +97,7 @@ class Command(BaseCommand):
             )
             return
 
-        result = send_notifications(pending)
+        result = send_pending_review_notifications(pending)
 
         summary = f'{result["sent"]} notification(s) sent'
         self.stdout.write(self.style.SUCCESS(summary))

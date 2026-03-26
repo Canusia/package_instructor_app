@@ -1,0 +1,76 @@
+{% extends "cis/logged-base.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+
+{% load static %}
+{% load templatehelpers %}
+
+{% block body %}
+<main>
+    <div class="row">
+        <div class="col-sm-8 col-xs-12">
+            <h1 class="h3 mb-4 text-gray-800">{{ page_title }}</h1>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    {% if skip_reason %}
+        <div class="alert alert-warning">{{ skip_reason }}</div>
+    {% elif not pending %}
+        <div class="alert alert-info">No applicants currently qualify for a notification.</div>
+    {% else %}
+        <p class="mb-3">
+            <strong>{{ pending|length }}</strong> applicant(s) will be notified based on the current
+            frequency and missing-items settings.
+        </p>
+
+        <table class="table table-striped table-sm mb-4">
+            <thead>
+                <tr>
+                    <th>Applicant</th>
+                    <th>Email</th>
+                    <th>Missing Items</th>
+                    <th>Recommendation Reminders</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in pending %}
+                <tr>
+                    <td>{{ entry.app.user }}</td>
+                    <td>{{ entry.to_email }}</td>
+                    <td>
+                        <ul class="mb-0 pl-3">
+                            {% for item in entry.missing_items %}
+                                <li>{{ item }}</li>
+                            {% endfor %}
+                        </ul>
+                    </td>
+                    <td>
+                        {% if entry.recommenders_to_remind %}
+                            <ul class="mb-0 pl-3">
+                                {% for rec in entry.recommenders_to_remind %}
+                                    <li>{{ rec.name }} &lt;{{ rec.email }}&gt;</li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary">
+                Send Notifications Now
+            </button>
+        </form>
+    {% endif %}
+</main>
+{% endblock %}

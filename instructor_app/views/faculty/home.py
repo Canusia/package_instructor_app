@@ -3,8 +3,12 @@ from datetime import datetime
 
 from django.shortcuts import render, get_object_or_404
 from django.contrib import messages
+from django.template import Template, Context
+from django.urls import reverse
 
-from cis.models.course import Cohort
+import json as _json
+
+from cis.models.course import Cohort, CourseAdministrator
 from cis.models.faculty import FacultyCoordinator
 from cis.models.note import TeacherApplicationNote
 from cis.menu import draw_menu, FACULTY_MENU
@@ -17,7 +21,7 @@ from ...models.teacher_applicant import (
     ApplicantCourseReviewer,
     get_fc_review_status,
 )
-from ...settings.inst_app_language import inst_app_language
+from ...settings.inst_app_language import inst_app_language, FACULTY_REVIEW_TEACHER_INFO_DEFAULT
 
 logger = logging.getLogger(__name__)
 
@@ -46,32 +50,67 @@ def teacher_applications(request):
             'cohorts': Cohort.objects.filter(
                 pk__in=my_cohort_ids
             ).order_by('designator'),
-            'api_url': '/ce/api/teacher_application?format=datatables'
+            'api_url': reverse('ce_instructor_app:teacher_application-list') + f'?format=datatables&reviewer={user.id}'
         }
     )
+
+
+def _get_review_form_config():
+    raw = inst_app_language.from_db().get('review_form_config') or {}
+    if isinstance(raw, str):
+        try:
+            return _json.loads(raw)
+        except Exception:
+            return {}
+    return raw
+
+
+def _mentor_choices_for_course(course):
+    return CourseAdministrator.objects.filter(
+        course=course,
+        role__in=['Faculty', 'Visitor'],
+        status='Active'
+    ).select_related('user')
 
 
 def review_application(request, record_id):
     teacher_application = get_object_or_404(TeacherApplication, pk=record_id)
     user = request.user
 
-    review_form = ApplicantReviewForm()
+    review_form_config = _get_review_form_config()
 
     if request.method == 'POST':
-        review_form = ApplicantReviewForm(request.POST)
+        post_course_review_id = request.POST.get('application_course_id')
+        mentor_qs = []
+        if post_course_review_id:
+            try:
+                acr = ApplicantCourseReviewer.objects.select_related(
+                    'application_course__course'
+                ).get(id=post_course_review_id)
+                mentor_qs = _mentor_choices_for_course(acr.application_course.course)
+            except ApplicantCourseReviewer.DoesNotExist:
+                pass
+
+        review_form = ApplicantReviewForm(
+            request.POST,
+            review_form_config=review_form_config,
+            mentor_choices=mentor_qs
+        )
 
         if review_form.is_valid():
             course_review_id = review_form.cleaned_data['application_course_id']
-            course_review = ApplicantCourseReviewer.objects.get(
-                id=course_review_id
-            )
+            course_review = ApplicantCourseReviewer.objects.get(id=course_review_id)
 
             course_review.status = review_form.cleaned_data['decision']
             if not course_review.misc_info:
                 course_review.misc_info = {}
 
-            course_review.misc_info['reviewer_note'] = review_form.cleaned_data['comment'] + '<br>-----------<br>' + course_review.misc_info.get('reviewer_note', '')
+            course_review.misc_info['reviewer_note'] = review_form.cleaned_data.get('comment', '') + '<br>-----------<br>' + course_review.misc_info.get('reviewer_note', '')
             course_review.misc_info['reviewed_on'] = datetime.now().strftime('%m/%d/%Y')
+
+            if review_form.cleaned_data.get('mentor'):
+                course_review.misc_info['mentor_id'] = review_form.cleaned_data['mentor']
+
             course_review.save()
 
             messages.add_message(
@@ -86,7 +125,18 @@ def review_application(request, record_id):
     courses = ApplicantCourseReviewer.objects.filter(
         reviewer=user,
         application_course__teacherapplication=teacher_application
-    )
+    ).select_related('application_course__course')
+
+    teacher_info_tmpl = inst_app_language.from_db().get('faculty_review_teacher_info') or FACULTY_REVIEW_TEACHER_INFO_DEFAULT
+    teacher_info_html = Template(teacher_info_tmpl).render(Context({'record': teacher_application}))
+
+    courses_with_forms = [
+        (cr, ApplicantReviewForm(
+            review_form_config=review_form_config,
+            mentor_choices=_mentor_choices_for_course(cr.application_course.course)
+        ))
+        for cr in courses
+    ]
 
     ed_bg = teacher_application.user.education_background
     if not ed_bg or isinstance(ed_bg, str):
@@ -117,13 +167,13 @@ def review_application(request, record_id):
             'teacher_application': teacher_application,
             'record': teacher_application,
             'notes': TeacherApplicationNote.objects.filter(
-                teacher_application=teacher_application,
+                teacher_application_id=teacher_application.id,
                 meta__type__iexact='public'
             ),
-            'courses': courses,
-            'review_form': review_form,
+            'courses_with_forms': courses_with_forms,
             'recommendations_needed': int(inst_app_language.from_db().get('recommendations_needed', '2')),
             'recommendations': teacher_application.recommendations,
+            'teacher_info_html': teacher_info_html,
             'ed_bg': teacher_application.user.education_background,
             'ed_bg_form': form,
             'uploads': teacher_application.uploads()

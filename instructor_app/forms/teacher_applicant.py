@@ -226,9 +226,41 @@ class ApplicantReviewForm(forms.Form):
         required=False
     )
 
+    mentor = forms.ChoiceField(
+        choices=[('', '---')],
+        label='Mentor',
+        required=False
+    )
+
     application_course_id = forms.CharField(
         widget=forms.HiddenInput
     )
+
+    FIELD_DEFAULTS = {
+        'decision': 'Your Decision/Recommendation',
+        'comment': 'Comment',
+        'mentor': 'Mentor',
+    }
+
+    def __init__(self, *args, review_form_config=None, mentor_choices=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        config = review_form_config or {}
+
+        for field_name, default_label in self.FIELD_DEFAULTS.items():
+            field_config = config.get(field_name, {})
+            visible = field_config.get('visible', field_name != 'mentor')  # mentor hidden by default
+            if not visible:
+                self.fields.pop(field_name, None)
+                continue
+            custom_label = field_config.get('label', '').strip()
+            if custom_label:
+                self.fields[field_name].label = custom_label
+
+        if 'mentor' in self.fields:
+            choices = [('', '---')]
+            if mentor_choices:
+                choices += [(str(ca.user.id), str(ca.user)) for ca in mentor_choices]
+            self.fields['mentor'].choices = choices
 
 class ApplicantCourseReviewerForm(forms.ModelForm):
     application_course_id = forms.CharField(
@@ -967,7 +999,7 @@ class SchoolCourseForm(forms.Form):
     highschool = forms.ChoiceField(
         choices=('', ''),
         label='High School',
-        help_text='Select the school at which you are applying to teach. If your school is not in the list please contact us at <a href="mailto:help@canusia.com">info@canusia.com</a>'
+        help_text='Select the school at which you are applying to teach.'
     )
 
     new_school_name = forms.CharField(

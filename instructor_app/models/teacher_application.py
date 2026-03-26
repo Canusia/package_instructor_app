@@ -232,13 +232,26 @@ class TeacherApplication(models.Model):
         return result
 
     def add_reviewers(self):
+        import json as _json
         from .applicant_course_reviewer import ApplicantCourseReviewer
-        # for each course applied, get active faculty and add as reviewers
+        from ..settings.inst_app_language import inst_app_language
+
+        role_config = inst_app_language.from_db().get('reviewer_role_config') or {}
+        if isinstance(role_config, str):
+            try:
+                role_config = _json.loads(role_config)
+            except Exception:
+                role_config = {}
+
+        reviewer_roles = list(role_config.keys()) if role_config else ['Faculty']
+
+        # for each course applied, get active coordinators matching selected roles and add as reviewers
         applied_courses = self.selected_courses
         for applied_course in applied_courses:
             course = applied_course.course
 
-            fc_reviewers = course.get_faculty_coordinators()
+            fc_reviewers = list(course.get_faculty_coordinators(reviewer_roles=reviewer_roles))
+            fc_reviewers.sort(key=lambda r: role_config.get(r.role, 999))
 
             for fc_reviewer in fc_reviewers:
                 try:

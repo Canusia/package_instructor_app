@@ -26,6 +26,7 @@ from .actions import (
 from .bulk_actions import do_bulk_action
 
 from django.shortcuts import render
+from django.urls import reverse
 from cis.menu import cis_menu, draw_menu
 from cis.models.course import Course
 from cis.models.term import AcademicYear
@@ -56,9 +57,9 @@ def index(request):
             'course_review_status': ApplicantCourseReviewer.STATUS_OPTIONS,
             'academic_years': AcademicYear.objects.all().order_by('-name'),
             'courses': Course.objects.all().order_by('cohort__designator'),
-            'api_url': '/ce/api/teacher_application?format=datatables',
-            'reviewer_api_url': '/ce/api/teacher_application_reviewers?format=datatables',
-            'applicant_api_url': '/ce/api/teacher_applicant?format=datatables',
+            'api_url': reverse('ce_instructor_app:teacher_application-list') + '?format=datatables',
+            'reviewer_api_url': reverse('ce_instructor_app:teacher_application_reviewers-list') + '?format=datatables',
+            'applicant_api_url': reverse('ce_instructor_app:teacher_applicant-list') + '?format=datatables',
             'fc_review_status': inst_app_language.from_db().get('fc_review_status_label', 'Ready for Review'),
         }
     )

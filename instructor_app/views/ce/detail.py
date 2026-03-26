@@ -376,7 +376,7 @@ def detail(request, record_id):
             'ed_bg_formset': ed_bg_formset,
             'uploads': record.uploads,
             'is_modal': True if request.GET.get('modal') else False,
-            'notes': TeacherApplicationNote.objects.filter(teacher_application=record).order_by("-createdon"),
+            'notes': TeacherApplicationNote.objects.filter(teacher_application_id=record.id).order_by("-createdon"),
             'app_upload_form': app_upload_form,
             'fc_review_status': app_settings.get('fc_review_status_label', 'Ready for Review'),
         })
