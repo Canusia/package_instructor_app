@@ -121,6 +121,124 @@ All at `/ce/api/` with `?format=datatables` support:
 | `teacher_application_reviewers/` | `TeacherApplicationReviewerViewSet` | Reviewer assignments |
 | `applicant_course_list/` | `ApplicantCourseListViewSet` | Applicant's course selections |
 
+## Integration: Course Requirements Tab on Courses Page
+
+`instructor_app` adds a **By Requirements** tab and **Update Availability** bulk action to the host app's CE courses page (`/ce/courses/`). This requires four changes in the host app's `cis` module.
+
+### 1. `cis/forms/course.py` — Add `CourseSIAvailabilityChangeForm`
+
+```python
+class CourseSIAvailabilityChangeForm(forms.Form):
+    available_for_si = forms.ChoiceField(
+        choices=YES_NO_SELECT_OPTIONS, required=False,
+        label='Available for New Instructor Applicants'
+    )
+    course_ids = forms.MultipleChoiceField(
+        required=False, label='Records to Update',
+        widget=forms.CheckboxSelectMultiple, choices=[]
+    )
+    action = forms.CharField(widget=forms.HiddenInput)
+    field_order = ['course_ids', 'action']
+
+    def __init__(self, course_ids=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['action'].initial = 'change_si_availability'
+        self.fields['available_for_si'].required = False
+        self.fields['available_for_si'].help_text = 'Leave blank to retain current value'
+        if course_ids:
+            courses = Course.objects.filter(id__in=course_ids)
+            self.fields['course_ids'].choices = [(c.id, c.name) for c in courses]
+            self.fields['course_ids'].initial = course_ids
+        else:
+            self.fields['course_ids'].choices = [
+                (cid, cid) for cid in kwargs.get('data').getlist('course_ids')
+            ]
+
+    def save(self, request=None):
+        from cis.models.note import CourseNote
+        data = self.cleaned_data
+        for course_id in data.get('course_ids'):
+            try:
+                course = Course.objects.get(id=course_id)
+                if data.get('available_for_si'):
+                    course.meta['available_for_si'] = data['available_for_si']
+                    CourseNote(course=course, createdby=request.user,
+                               note='Changing SI Availability<br>').save()
+                    course.save()
+            except Exception:
+                pass
+```
+
+### 2. `cis/views/course.py` — Import, dispatch, function, and context
+
+**Import:**
+```python
+from cis.forms.course import CourseSIAvailabilityChangeForm
+```
+
+**In `do_bulk_action`, add dispatch before the fallthrough return:**
+```python
+if action == 'change_si_availability':
+    return change_si_availability(request)
+```
+
+**New function:**
+```python
+def change_si_availability(request):
+    template = 'cis/course/update_si_availability.html'
+    if request.method == 'POST':
+        form = CourseSIAvailabilityChangeForm(data=request.POST)
+        if form.is_valid():
+            form.save(request)
+            return JsonResponse({'status': 'success', 'message': 'Successfully updated records', 'action': 'reload_table'})
+        return JsonResponse({'status': 'error', 'message': 'Please correct the errors and try again.', 'errors': form.errors.as_json()}, status=400)
+    ids = request.GET.getlist('ids[]')
+    return render(request, template, {'title': 'Change SI Availability', 'form': CourseSIAvailabilityChangeForm(ids)})
+```
+
+**In `index` view context, add:**
+```python
+'course_requirements_url': reverse('ce_instructor_app:course-requirements-list') + '?format=datatables',
+'course_req_bulk_actions_url': reverse('ce_instructor_app:course_req_bulk_actions'),
+```
+
+### 3. `cis/templates/cis/course/courses.html` — Tab, include, and JS
+
+Add the **By Requirements** nav tab:
+```html
+<li class="nav-item">
+    <a class="nav-link" data-toggle="tab" href="#course_requirements">By Requirements</a>
+</li>
+```
+
+Add the include inside `tab-content` (before the `#all` div). The include provides the `#course_requirements` pane, the `#course_administrators` pane, and the DataTable inits for both — remove any standalone versions of those from the host template:
+```html
+{% include "instructor_app/ce/course_requirements_tab.html" %}
+```
+
+Add to the JS block:
+- `window.refreshTable` function that reloads all three tables
+- `do_bulk_action(action, dt)` function that POSTs to `{% url 'cis:course_bulk_actions' %}`
+- `table_course_requirements` to the `var` declaration and `setInterval` checks
+- On `#records_all` DataTable: `rowId: 'id'`, `select: {style: 'os', selector: 'td:first-child'}`, a `select-checkbox` first column (`columnDefs`), and the **Update Availability** button:
+
+```js
+{
+    className: 'btn btn-sm btn-primary text-light',
+    text: '<i class="fas fa-edit text-white"></i>&nbsp;Update Availability',
+    titleAttr: 'Update Availability',
+    action: function (e, dt, node, config) {
+        do_bulk_action('change_si_availability', dt)
+    }
+}
+```
+
+Also add an empty-render first column to `#records_all` `columns` array to match the new checkbox column.
+
+### 4. `cis/templates/cis/course/update_si_availability.html` — New template
+
+Create this template extending `cis/ajax-base.html`. It handles AJAX form submission and calls `window.parent.refreshTable()` with `action: 'reload_table'` on success. Copy from `instructor_app`'s reference implementation.
+
 ## Integration: Future Sections App
 
 The `future_sections` app can automatically create teacher applications when HS admins add new teachers during section requests. See [ARCHITECTURE.md](ARCHITECTURE.md) for the full flow.
@@ -265,11 +383,24 @@ In `cis/templates/cis/index/instructor.html`, add the application start button:
 }
 ```
 
-### 5. Register settings and run migrations
+### 5. Register static files
+
+In `settings.py`, add the package's `staticfiles/` directory to `STATICFILES_DIRS`:
+
+```python
+STATICFILES_DIRS = [
+    # ... other entries ...
+    os.path.join(get_package_path("instructor_app"), 'staticfiles') if get_package_path("instructor_app") else None,
+]
+STATICFILES_DIRS = [d for d in STATICFILES_DIRS if d]  # remove None entries
+```
+
+### 6. Register settings and run migrations
 
 ```bash
 python manage.py migrate
 python manage.py register_settings
+python manage.py register_reports
 ```
 
 ## Management Commands
