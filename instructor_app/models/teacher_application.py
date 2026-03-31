@@ -125,9 +125,9 @@ class TeacherApplication(models.Model):
 
     @property
     def attending_si_year(self):
-        if not self.misc_info.participating_acad_year:
+        if not self.misc_info or not self.misc_info.get('participating_acad_year'):
             return 'NA'
-        return AcademicYear.objects.get(pk=self.misc_info.participating_acad_year).name
+        return AcademicYear.objects.get(pk=self.misc_info.get('participating_acad_year')).name
 
     @property
     def document_list_asHTML(self):
@@ -261,6 +261,7 @@ class TeacherApplication(models.Model):
                     )
                     reviewer.save()
                 except Exception as e:
+                    print(e)
                     logger.error(e)
                     ...
 

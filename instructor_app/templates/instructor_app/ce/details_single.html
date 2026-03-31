@@ -1,0 +1,124 @@
+{% load templatehelpers %}
+{% load crispy_forms_tags %}
+
+<style>
+    body { font-size: 13px; }
+    h5 { font-size: 1em; font-weight: bold; margin-top: 1em; }
+    .section-title { font-weight: bold; text-transform: uppercase; font-size: 0.8em; color: #555; border-bottom: 1px solid #ccc; margin-bottom: 0.5em; padding-bottom: 0.2em; }
+    .label { font-weight: bold; font-size: 0.85em; color: #333; }
+    .value { margin-bottom: 0.4em; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 1em; }
+    th, td { border: 1px solid #ccc; padding: 4px 8px; font-size: 0.85em; }
+    th { background: #f0f0f0; font-weight: bold; }
+    .page-break { page-break-before: always; }
+</style>
+
+<h2>{{ record }}</h2>
+<p><strong>Status:</strong> {{ record.status }} &nbsp;&nbsp; <strong>Submitted On:</strong> {{ record.submitted_on }}</p>
+<hr>
+
+<!-- Application Details -->
+<div class="section-title">Application Details</div>
+<table>
+    <tr><th>Field</th><th>Value</th></tr>
+    <tr><td class="label">Name</td><td>{{ record.user.get_full_name }}</td></tr>
+    <tr><td class="label">Email</td><td>{{ record.user.email }}</td></tr>
+    <tr><td class="label">Phone</td><td>{{ record.user.primary_phone }}</td></tr>
+    <tr><td class="label">High School</td><td>{{ record.highschool }}</td></tr>
+    <tr><td class="label">Status</td><td>{{ record.status }}</td></tr>
+    <tr><td class="label">EMPLID</td><td>{{ record.user.psid }}</td></tr>
+    <tr><td class="label">Decision Letter Sent</td><td>{{ record.misc_info.decision_letter_sent_on }}</td></tr>
+    <tr><td class="label">Attending Academic Year</td><td>{{ record.attending_si_year }}</td></tr>
+</table>
+
+<!-- Courses -->
+<div class="section-title">Courses</div>
+{% if interested_courses %}
+<table>
+    <tr><th>Course</th><th>Title</th><th>High School</th><th>Status</th></tr>
+    {% for course in interested_courses %}
+    <tr>
+        <td>{{ course.course.name }}</td>
+        <td>{{ course.course.title }}</td>
+        <td>{{ course.highschool }}</td>
+        <td>{{ course.status }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>No courses selected.</p>
+{% endif %}
+
+<!-- Education Background -->
+<div class="section-title">Education Background</div>
+{% if record.education_entries %}
+<table>
+    <tr><th>Institution</th><th>Degree / Licensure</th><th>Major</th></tr>
+    {% for entry in record.education_entries %}
+    <tr>
+        <td>{{ entry.institution }}</td>
+        <td>{{ entry.degree }}</td>
+        <td>{{ entry.major }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endif %}
+{% if ed_bg %}
+<table>
+    <tr><th>Field</th><th>Value</th></tr>
+    {% if ed_bg.credits_earned %}<tr><td>Credits Earned</td><td>{{ ed_bg.credits_earned }}</td></tr>{% endif %}
+    {% if ed_bg.masters_level_credits %}<tr><td>Masters Level Credits</td><td>{{ ed_bg.masters_level_credits }}</td></tr>{% endif %}
+    {% if ed_bg.undergrad_program %}<tr><td>Undergrad Program</td><td>{{ ed_bg.undergrad_program }}</td></tr>{% endif %}
+    {% if ed_bg.certified_states %}<tr><td>Certified States</td><td>{{ ed_bg.certified_states }}</td></tr>{% endif %}
+    {% if ed_bg.highschool_years %}<tr><td>Years Teaching High School</td><td>{{ ed_bg.highschool_years }}</td></tr>{% endif %}
+    {% if ed_bg.college_years %}<tr><td>Years Teaching College</td><td>{{ ed_bg.college_years }}</td></tr>{% endif %}
+</table>
+{% endif %}
+
+<!-- Recommendations -->
+<div class="section-title">Recommendations</div>
+{% if recommendations %}
+<table>
+    <tr><th>Recommender</th><th>Email</th><th>Received On</th></tr>
+    {% for rec in recommendations %}
+    <tr>
+        <td>{{ rec.submitter.get_full_name|default:"-" }}</td>
+        <td>{{ rec.submitter.email|default:"-" }}</td>
+        <td>{{ rec.createdon|date:"m/d/Y" }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>No recommendations received.</p>
+{% endif %}
+
+<!-- Uploads -->
+<div class="section-title">Uploads</div>
+{% if uploads %}
+<table>
+    <tr><th>File</th><th>Uploaded On</th></tr>
+    {% for upload in uploads %}
+    <tr>
+        <td>{{ upload.filename }}</td>
+        <td>{{ upload.createdon|date:"m/d/Y" }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>No uploads.</p>
+{% endif %}
+
+<!-- Notes -->
+{% if notes %}
+<div class="section-title page-break">Notes</div>
+<table>
+    <tr><th>Date</th><th>Author</th><th>Note</th></tr>
+    {% for note in notes %}
+    <tr>
+        <td>{{ note.createdon|date:"m/d/Y" }}</td>
+        <td>{% if note.createdby %}{{ note.createdby.get_full_name }}{% else %}System{% endif %}</td>
+        <td>{{ note.note|striptags }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endif %}

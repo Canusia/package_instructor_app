@@ -12,7 +12,7 @@ from ...models.teacher_applicant import (
     ApplicantSchoolCourse,
     ApplicationUpload
 )
-from cis.models.note import TeacherApplicationNote
+from ...models.teacher_application_note import TeacherApplicationNote
 
 from ...forms.teacher_applicant import (
     ApplicantCourseReviewerForm,
@@ -20,6 +20,7 @@ from ...forms.teacher_applicant import (
     EditSchoolCourseForm,
     AddCourseForm,
     EditTeacherAppCourseUploadForm,
+    AddNoteForm,
 )
 
 logger = logging.getLogger(__name__)
@@ -28,7 +29,6 @@ logger = logging.getLogger(__name__)
 def send_approval_email(request, record_id):
     record = get_object_or_404(TeacherApplication, pk=record_id)
     record.notify_application_approved()
-    record.mark_as_approval_notification(request)
 
     return JsonResponse({
         'status': 'success',
@@ -126,6 +126,15 @@ def remind_reviewer(request):
     course_review = get_object_or_404(ApplicantCourseReviewer, pk=reviewer_id)
     course_review.notify_reviewer()
 
+    reviewer_name = f'{course_review.reviewer.first_name} {course_review.reviewer.last_name}'
+    course_name = str(course_review.application_course.course)
+    TeacherApplicationNote.objects.create(
+        teacher_application=course_review.application_course.teacherapplication,
+        note=f'Reminder sent to reviewer {reviewer_name} for course {course_name}.',
+        createdby=request.user,
+        meta={'type': 'private'}
+    )
+
     return JsonResponse({
         'status': 'success',
         'message': 'Successfully processed your request'
@@ -167,6 +176,12 @@ def do_action(request, record_id):
 
     if action == 'delete_teacher_application_course':
         return delete_teacher_application_course(request, record_id)
+
+    if action == 'add_reviewer':
+        return add_reviewer(request, record_id)
+
+    if action == 'add_note':
+        return add_note(request, record_id)
 
     return JsonResponse({
         'status': 'success',
@@ -293,6 +308,91 @@ def edit_teacher_application_highschool(request, record_id):
         'form_action': str(reverse_lazy('ce_instructor_app:teacher_app_action', kwargs={'record_id': record_id}))
     }
     return render(request, template, context)
+
+
+def add_reviewer(request, record_id):
+    """Add a reviewer to an ApplicantSchoolCourse via the do-action modal flow.
+
+    record_id is the ApplicantSchoolCourse pk (passed from the button's data-url).
+    """
+    template = 'instructor_app/ce/manage_reviewer.html'
+    application_course = get_object_or_404(ApplicantSchoolCourse, pk=record_id)
+    form_action = str(reverse_lazy(
+        'ce_instructor_app:teacher_app_action', kwargs={'record_id': record_id}
+    ))
+
+    if request.method == 'POST':
+        form = ApplicantCourseReviewerForm(application_course, request.POST)
+        if form.is_valid():
+            try:
+                course_reviewer = form.save(commit=False)
+                course_reviewer.application_course = application_course
+                course_reviewer.save()
+                return JsonResponse({
+                    'status': 'success',
+                    'message': 'Successfully added reviewer',
+                    'action': 'reload_page'
+                })
+            except Exception:
+                logger.exception('Error adding course reviewer')
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Looks like a duplicate entry',
+                })
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Please correct the errors and try again.',
+            'errors': form.errors.as_json()
+        }, status=400)
+
+    form = ApplicantCourseReviewerForm(application_course=application_course)
+    return render(request, template, {
+        'form': form,
+        'record': application_course,
+        'form_action': form_action,
+        'ajax': '1',
+        'base_template': 'cis/ajax-base.html',
+    })
+
+
+def add_note(request, record_id):
+    """Add a note to a TeacherApplication via the do-action modal flow."""
+    template = 'instructor_app/ce/manage_note.html'
+    teacher_application = get_object_or_404(TeacherApplication, pk=record_id)
+    form_action = str(reverse_lazy(
+        'ce_instructor_app:teacher_app_action', kwargs={'record_id': record_id}
+    ))
+
+    if request.method == 'POST':
+        form = AddNoteForm(request.POST)
+        if form.is_valid():
+            try:
+                form.save(request, teacher_application)
+                return JsonResponse({
+                    'status': 'success',
+                    'message': 'Successfully added note',
+                    'action': 'reload_page'
+                })
+            except Exception:
+                logger.exception('Error adding note')
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'An error occurred while saving the note.',
+                })
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Please correct the errors and try again.',
+            'errors': form.errors.as_json()
+        }, status=400)
+
+    form = AddNoteForm()
+    return render(request, template, {
+        'form': form,
+        'record': teacher_application,
+        'form_action': form_action,
+        'ajax': '1',
+        'base_template': 'cis/ajax-base.html',
+    })
 
 
 def add_new_course_reviewer(request):

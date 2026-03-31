@@ -1751,3 +1751,33 @@ class HSAdminAddTeacherForm(TeacherApplicantProfileForm):
         )
         applicant.save()
         return applicant
+
+
+class AddNoteForm(forms.Form):
+    note = forms.CharField(
+        required=True,
+        label='Note',
+        widget=forms.Textarea(attrs={'rows': 4})
+    )
+
+    type = forms.ChoiceField(
+        required=False,
+        label='Visibility',
+        choices=[
+            ('', 'Private (staff only)'),
+            ('to_instructor', 'Send to Instructor via Email'),
+            ('public', 'Share with Faculty'),
+        ],
+        widget=forms.RadioSelect()
+    )
+
+    def save(self, request, teacher_application):
+        from ..models.teacher_application_note import TeacherApplicationNote
+        note = TeacherApplicationNote(
+            teacher_application=teacher_application,
+            note=self.cleaned_data['note'],
+            createdby=request.user,
+            meta={'type': self.cleaned_data.get('type') or 'private'}
+        )
+        note.save()
+        return note

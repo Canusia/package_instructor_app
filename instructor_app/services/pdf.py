@@ -9,18 +9,14 @@ def application_as_pdf(application):
     """
     import pdfkit
     from ..forms.teacher_applicant import (
-        TeacherApplicantProfileForm, EditTeacherApplicationForm, EdBgForm
+        EditTeacherApplicationForm, EdBgForm
     )
-    from cis.models.note import TeacherApplicationNote
+    from ..models.teacher_application_note import TeacherApplicationNote
 
     record = application
 
     base_template = 'instructor_app/ce/details_single.html'
     template = get_template(base_template)
-
-    app_profile_form = TeacherApplicantProfileForm(
-        user=record.user
-    )
 
     ed_bg = record.user.education_background
     if not ed_bg:
@@ -61,7 +57,7 @@ def application_as_pdf(application):
         'form': form,
         'page_title': "Application",
         'record': record,
-        'app_profile_form': app_profile_form,
+
         'recommendations': record.recommendations,
         'interested_courses': record.selected_courses,
         'ed_bg': record.user.education_background,

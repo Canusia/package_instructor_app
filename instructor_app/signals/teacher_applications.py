@@ -17,10 +17,12 @@ from ..models.teacher_applicant import (
     ApplicantCourseReviewer,
     get_fc_review_status
 )
+from ..models.teacher_application_note import TeacherApplicationNote
 
 from ..settings.teacher_application_email import (
     teacher_application_email as tapp_settings,
 )
+from cis.settings.notes_email import notes_email
 
 from ..settings.inst_app_language import (
     inst_app_language as inst_app_page_settings
@@ -31,14 +33,41 @@ from alerts.models import Alert
 logger = logging.getLogger(__name__)
 
 
+def _add_system_note(teacher_application, note_text, createdby=None):
+    """Create a private system note on a TeacherApplication."""
+    try:
+        TeacherApplicationNote.objects.create(
+            teacher_application=teacher_application,
+            note=note_text,
+            createdby=createdby,
+            meta={'type': 'private'}
+        )
+    except Exception:
+        logger.exception('Error creating system note for application %s', teacher_application.pk)
+
+
 @receiver(post_save, sender=ApplicantCourseReviewer)
 def assign_new_reviewer(sender, instance, created, **kwargs):
     """
     Send email to reviewer
     """
-    if not created:
-        # call notifications medthod
+    app = instance.application_course.teacherapplication
+    reviewer_name = f'{instance.reviewer.first_name} {instance.reviewer.last_name}'
+    course_name = str(instance.application_course.course)
+
+    if created:
+        _add_system_note(
+            app,
+            f'Reviewer {reviewer_name} added for course {course_name}.',
+        )
+    else:
         instance.notify_status_change(instance.status)
+        if instance.status != '---':
+            _add_system_note(
+                app,
+                f'Reviewer {reviewer_name} submitted decision "{instance.status}" for course {course_name}.',
+                createdby=instance.reviewer,
+            )
 
 @receiver(post_save, sender=ApplicantRecommendation)
 def create_new_recommendation(sender, instance, created, **kwargs):
@@ -98,8 +127,14 @@ def teacher_app_status_updated(sender, instance, **kwargs):
 
         instance.status_changed_on = status_changed_on
 
-        # call notifications medthod
+        # call notifications method
         instance.notify_status_change(status)
+
+        _add_system_note(
+            instance,
+            f'Status changed from "{previous_status}" to "{status}".',
+            createdby=instance.assigned_to,
+        )
 
         if previous_status == 'Submitted':
             # course admin changes this
@@ -190,6 +225,68 @@ def selected_new_course(sender, instance, created, **kwargs):
             to = ['kadaji@gmail.com']
 
         subject = email_settings.get('course_selected_email_subject')
+
+        send_html_mail(
+            subject,
+            text_body,
+            html_body,
+            settings.DEFAULT_FROM_EMAIL,
+            to
+        )
+
+
+@receiver(post_save, sender=TeacherApplicationNote)
+def teacher_application_note_added(sender, instance, created, **kwargs):
+    """
+    Handle post-save actions for TeacherApplicationNote.
+
+    - type='to_instructor': email the applicant with the note content and a reply link.
+    - type='response': create an alert for the original note author.
+    """
+    if not created or not instance.meta:
+        return
+
+    note_type = instance.meta.get('type')
+
+    if note_type == 'response':
+        if not instance.parent:
+            return
+        try:
+            parent_note = TeacherApplicationNote.objects.get(pk=instance.parent)
+            alert = Alert()
+            alert.alert_type = 'si_app_note_response'
+            alert.recipient = parent_note.createdby
+            link = str(instance.teacher_application.ce_url) + '#notes'
+            alert.message = f'<a class="display_in_modal" href="{link}">New note added by {instance.createdby}'
+            alert.save()
+        except TeacherApplicationNote.DoesNotExist:
+            pass
+
+    if note_type == 'to_instructor':
+        email_settings = notes_email.from_db()
+
+        if email_settings.get('is_active', 'No') == 'No':
+            return
+
+        email_template = Template(email_settings['teacherapplication_note_to_instructor_email'])
+        subject = email_settings.get('teacherapplication_note_to_instructor_subject')
+        to = [instance.teacher_application.user.email]
+
+        context = Context({
+            'note': instance.note,
+            'instructor_first_name': instance.teacher_application.user.first_name,
+            'instructor_last_name': instance.teacher_application.user.last_name,
+            'reply_url': instance.teacher_reply_url,
+        })
+
+        text_body = email_template.render(context)
+        html_body = get_template('cis/email.html').render({'message': text_body})
+
+        if getattr(settings, 'DEBUG', True):
+            to = ['kadaji@gmail.com']
+
+        if email_settings.get('is_active') == 'Debug':
+            to = ['avi@canusia.com']
 
         send_html_mail(
             subject,

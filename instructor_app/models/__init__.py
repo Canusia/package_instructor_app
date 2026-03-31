@@ -8,3 +8,4 @@ from .applicant_course_reviewer import ApplicantCourseReviewer
 from .applicant_school_course import ApplicantSchoolCourse
 from .applicant_recommendation import ApplicantRecommendation
 from .application_upload import ApplicationUpload
+from .teacher_application_note import TeacherApplicationNote

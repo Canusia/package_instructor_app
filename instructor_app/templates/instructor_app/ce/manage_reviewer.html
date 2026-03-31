@@ -41,12 +41,12 @@
                             </ul>
                             {% endif %}
                         </div>
-                        <form action="" id="form_course_reviewer" method="post">
+                        <form action="{{form_action|safe}}" id="form_course_reviewer" method="post" class="frm_bulk_action">
                             {% csrf_token %}
                             {{ form | crispy }}
-                            <input type="hidden" name="model" value="applicationcoursereviewer">
-                            <input type="hidden" name="ajax" value="1">
+                            <input type="hidden" name="action" value="add_reviewer">
                             <input type="submit" class="btn btn-primary btn-sm" value="Save">
+                            <input type="button" class="btn btn-sm" onclick="window.closeBulkActionModal()" value="Cancel & Close">
                         </form>
                     </div>
                 </div>

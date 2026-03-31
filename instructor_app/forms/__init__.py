@@ -21,4 +21,5 @@ from .teacher_applicant import (
     TeacherApplicantProfileForm,
     TeacherApplicantEditableForm,
     HSAdminAddTeacherForm,
+    AddNoteForm,
 )
