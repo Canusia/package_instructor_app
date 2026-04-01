@@ -130,10 +130,26 @@ jQuery(document).ready(function ($) {
             url: url,
             success: function (response) {
                 $.unblockUI();
-                swal("", response.message, response.status);
+                swal({
+                                                                title: 'Success',
+                                                                text: response.message,
+                                                                icon: response.status
+                                                            }).then(
+                                                                (value) => {
                 if (response.status == 'success') {
-                    window.location = response.redirect;
+
+                    if(window.frameElement !== null) {
+                        // close the modal
+                        window.parent.closeModal();
+                    } else {
+                        window.location = response.redirect;
+                    }
                 }
+            });
+            },
+            error: function (xhr) {
+                $.unblockUI();
+                swal("Error", xhr.responseJSON.message, "error");
             }
         });
     });
