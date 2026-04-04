@@ -11,6 +11,7 @@ from django.utils.safestring import mark_safe
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit, Layout, HTML
 
+from cis.models.crontab import CronTab
 from cis.models.term import Term, AcademicYear
 from cis.models.settings import Setting
 from cis.validators import validate_cron, validate_email_list, validate_html_short_code
@@ -197,6 +198,12 @@ class SettingForm(forms.Form):
         """
         Return dict of form elements from $_POST
         """
+        cron, created = CronTab.objects.get_or_create(
+            command='notify_si_pending_review'
+        )
+        cron.cron = self.cleaned_data.get('cron')
+        cron.save()
+
         return {
             'internal_notify_on': self.cleaned_data.get('internal_notify_on', []),
             'new_applicant_email_subject': self.cleaned_data['new_applicant_email_subject'],
@@ -204,7 +211,9 @@ class SettingForm(forms.Form):
             'course_selected_email_recipient': self.cleaned_data.get('course_selected_email_recipient', ''),
             'course_selected_email_subject': self.cleaned_data.get('course_selected_email_subject', ''),
             'course_selected_email': self.cleaned_data.get('course_selected_email', ''),
-
+            
+            'reviewer_notif_cron': self.cleaned_data['reviewer_notif_cron'],
+            
             'fc_ready_email_subject': self.cleaned_data['fc_ready_email_subject'],
             'fc_ready_email': self.cleaned_data['fc_ready_email'],
 
