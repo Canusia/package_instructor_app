@@ -201,7 +201,7 @@ class SettingForm(forms.Form):
         cron, created = CronTab.objects.get_or_create(
             command='notify_si_pending_review'
         )
-        cron.cron = self.cleaned_data.get('cron')
+        cron.cron = self.cleaned_data.get('reviewer_notif_cron')
         cron.save()
 
         return {
@@ -216,6 +216,8 @@ class SettingForm(forms.Form):
             
             'fc_ready_email_subject': self.cleaned_data['fc_ready_email_subject'],
             'fc_ready_email': self.cleaned_data['fc_ready_email'],
+
+            'reviewer_notif_cron': self.cleaned_data['reviewer_notif_cron'],
 
             'app_submitted_email_subject': self.cleaned_data.get('app_submitted_email_subject', ''),
             'app_decision_made_email_subject': self.cleaned_data['app_decision_made_email_subject'],
