@@ -329,6 +329,8 @@ def detail(request, record_id):
             'highschool_years': ed_bg.get('highschool_years'),
             'college_years': ed_bg.get('college_years'),
             'courses_taught': ed_bg.get('courses_taught'),
+            'course_offering_format': ed_bg.get('course_offering_format'),
+            'students_per_class': ed_bg.get('students_per_class'),
         })
 
         formset_initial = []

@@ -493,6 +493,8 @@ class inst_app_language(SettingForm):
             ('highschool_years', 'Total years teaching high school'),
             ('college_years', 'Total years teaching college'),
             ('courses_taught', 'Subjects taught related to course'),
+            ('course_offering_format', 'Do you anticipate teaching College courses as stand-alone courses, in conjunction with AP, or blended with non-college courses?'),
+            ('students_per_class', 'How many students do you anticipate registering for College credits in each class?'),
         ]
 
         eb_rows_html = ""

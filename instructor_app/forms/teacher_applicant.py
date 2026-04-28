@@ -549,10 +549,23 @@ class EdBgForm(forms.Form):
         widget=forms.Textarea
     )
 
+    course_offering_format = forms.CharField(
+        required=False,
+        label='Do you anticipate teaching EWU courses as stand-alone courses, in conjunction with AP, or blended with non-college courses?',
+        widget=forms.Textarea
+    )
+
+    students_per_class = forms.CharField(
+        required=False,
+        label='How many students do you anticipate registering for EWU credits in each class?',
+        widget=forms.TextInput(attrs={'class': 'col-8'})
+    )
+
     CONFIGURABLE_FIELDS = [
         'other_name', 'credits_earned', 'masters_level_credits',
         'grad_courses', 'undergrad_program', 'certified_states',
-        'certified_subjects', 'highschool_years', 'college_years', 'courses_taught'
+        'certified_subjects', 'highschool_years', 'college_years', 'courses_taught',
+        'course_offering_format', 'students_per_class',
     ]
 
     def __init__(self, *args, **kwargs):
@@ -600,7 +613,8 @@ class EdBgForm(forms.Form):
 
         for field in ['credits_earned', 'masters_level_credits', 'grad_courses',
                       'undergrad_program', 'certified_states', 'certified_subjects',
-                      'highschool_years', 'college_years', 'courses_taught']:
+                      'highschool_years', 'college_years', 'courses_taught',
+                      'course_offering_format', 'students_per_class']:
             ed_bg_data[field] = self.cleaned_data.get(field, '')
 
         user.education_background = ed_bg_data
@@ -1426,6 +1440,38 @@ class TeacherApplicantProfileForm(MetaFormMixin, forms.Form):
         validate={'required': 'true', 'email': 'true'},
     )
 
+    # ==================== Password ====================
+
+    password = with_meta(
+        forms.CharField(
+            max_length=128,
+            label='Create Password or Passphrase',
+            validators=[
+                DictionaryValidator(words=['banned_word'], threshold=0.9),
+                LengthValidator(min_length=12),
+                ComplexityValidator(complexities=dict(
+                    UPPER=1,
+                    LOWER=1,
+                    DIGITS=1
+                ))
+            ],
+            help_text='Please choose a strong password, with min. 12 characters, at least 1 digit, 1 special character and 1 uppercase letter',
+            widget=forms.PasswordInput(attrs={'class': 'col-md-6 col-sm-12', 'autocomplete': 'off'}),
+        ),
+        target='skip',
+        validate={'required': 'true', 'min-length': '12'},
+    )
+
+    confirm_password = with_meta(
+        forms.CharField(
+            max_length=128,
+            label='Retype Password or Passphrase',
+            widget=forms.PasswordInput(attrs={'class': 'col-md-6 col-sm-12', 'autocomplete': 'off'}),
+        ),
+        target='skip',
+        validate={'required': 'true', 'match': 'password'},
+    )
+    
     secondary_email = with_meta(
         forms.EmailField(
             label='Personal Email',
@@ -1505,6 +1551,18 @@ class TeacherApplicantProfileForm(MetaFormMixin, forms.Form):
         validate={'required': 'true'},
     )
 
+    home_address2 = with_meta(
+        forms.CharField(
+            label='Home Address 2',
+            max_length=128,
+            help_text='Do not enter symbols (e.g. #). You may include Apt, Unit, Box etc.',
+            widget=forms.TextInput(attrs={'class': 'col-md-8 col-sm-12'}),
+        ),
+        target='user',
+        path='address2',
+        validate={'required': 'false'},
+    )
+
     city = with_meta(
         forms.CharField(
             label='City',
@@ -1536,47 +1594,16 @@ class TeacherApplicantProfileForm(MetaFormMixin, forms.Form):
         validate={'required': 'true'},
     )
 
-    country = with_meta(
-        forms.CharField(
-            label='Country',
-            max_length=50,
-            widget=forms.TextInput(attrs={'class': 'col-md-4 col-sm-6'}),
-        ),
-        target='user',
-        validate={'required': 'true'},
-    )
+    # country = with_meta(
+    #     forms.CharField(
+    #         label='Country',
+    #         max_length=50,
+    #         widget=forms.TextInput(attrs={'class': 'col-md-4 col-sm-6'}),
+    #     ),
+    #     target='user',
+    #     validate={'required': 'true'},
+    # )
 
-    # ==================== Password ====================
-
-    password = with_meta(
-        forms.CharField(
-            max_length=128,
-            label='Create Password or Passphrase',
-            validators=[
-                DictionaryValidator(words=['banned_word'], threshold=0.9),
-                LengthValidator(min_length=12),
-                ComplexityValidator(complexities=dict(
-                    UPPER=1,
-                    LOWER=1,
-                    DIGITS=1
-                ))
-            ],
-            help_text='Please choose a strong password, with min. 12 characters, at least 1 digit, 1 special character and 1 uppercase letter',
-            widget=forms.PasswordInput(attrs={'class': 'col-md-6 col-sm-12', 'autocomplete': 'off'}),
-        ),
-        target='skip',
-        validate={'required': 'true', 'min-length': '12'},
-    )
-
-    confirm_password = with_meta(
-        forms.CharField(
-            max_length=128,
-            label='Retype Password or Passphrase',
-            widget=forms.PasswordInput(attrs={'class': 'col-md-6 col-sm-12', 'autocomplete': 'off'}),
-        ),
-        target='skip',
-        validate={'required': 'true', 'match': 'password'},
-    )
 
     # ==================== Form Methods ====================
 
