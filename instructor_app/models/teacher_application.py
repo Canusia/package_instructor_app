@@ -170,6 +170,8 @@ class TeacherApplication(models.Model):
             result += '</div>'
 
             result += "<small class='text-muted'>"
+            if file.description:
+                result += file.description + " | "
             if file.required == '1':
                 result += 'Required'
             else:
@@ -177,8 +179,6 @@ class TeacherApplication(models.Model):
             result += "</small>"
 
             result += '</div>'
-        else:
-            result += '<p class="alert alert-danger">Either you have not selected any course or no course requirements have been added</p>'
         result += '</div>'
         return result
 
