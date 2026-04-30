@@ -395,7 +395,29 @@ STATICFILES_DIRS = [
 STATICFILES_DIRS = [d for d in STATICFILES_DIRS if d]  # remove None entries
 ```
 
-### 6. Register settings and run migrations
+### 6. Verify required `cis` static files
+
+Ensure the host `cis` app has the following files in its `staticfiles/` folder. The instructor application templates depend on them for address autocomplete and form validation:
+
+- `address_auto_complete.js`
+- `address_auto_complete.css`
+- `form_validation.js`
+
+If any are missing, copy them from the host project's `cis` app (or restore from version control) before proceeding.
+
+Also verify the host `student` app's `urls.py` exposes the address lookup endpoint used by `address_auto_complete.js`:
+
+```python
+# Utility views
+from student.views.utils import address_suggestions
+
+# Utility endpoints
+urlpatterns += [
+    path('address_lookup', address_suggestions, name='address_lookup'),
+]
+```
+
+### 7. Register settings and run migrations
 
 ```bash
 python manage.py migrate

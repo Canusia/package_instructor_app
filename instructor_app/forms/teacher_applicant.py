@@ -1555,6 +1555,7 @@ class TeacherApplicantProfileForm(MetaFormMixin, forms.Form):
         forms.CharField(
             label='Home Address 2',
             max_length=128,
+            required=False,
             help_text='Do not enter symbols (e.g. #). You may include Apt, Unit, Box etc.',
             widget=forms.TextInput(attrs={'class': 'col-md-8 col-sm-12'}),
         ),
