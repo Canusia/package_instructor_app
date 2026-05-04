@@ -201,6 +201,7 @@ def complete_signup(request, applicant_id):
 
     app_settings = _get_app_settings()
     accepting = _is_accepting_applications(app_settings)
+    complete_signup_intro = app_settings.get('complete_signup_intro', '')
 
     if not accepting:
         closed_message = app_settings.get('closed_message', '-')
@@ -259,6 +260,7 @@ def complete_signup(request, applicant_id):
         'instructor_app/complete_signup.html',
         {
             'form': form,
+            'complete_signup_intro': complete_signup_intro,
         })
 
 

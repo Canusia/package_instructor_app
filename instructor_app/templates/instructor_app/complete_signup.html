@@ -114,6 +114,12 @@
             {% endif %}
 
             <div class="col-md-9">
+                {% if complete_signup_intro %}
+                <div class="page-intro mb-3">
+                    {{ complete_signup_intro|safe }}
+                </div>
+                {% endif %}
+
                 {% if form.errors %}
                 <p class="alert alert-danger">Please correct the errors in the form below and try again.</p>
                 {% endif %}

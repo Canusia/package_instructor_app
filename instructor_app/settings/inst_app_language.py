@@ -176,6 +176,13 @@ class SettingForm(forms.Form):
         help_text='Displayed at the top of the signup page',
         label="Signup Page Intro")
 
+    complete_signup_intro = forms.CharField(
+        max_length=None,
+        required=False,
+        widget=forms.Textarea,
+        help_text='Displayed at the top of the complete-signup (profile) page',
+        label="Complete Signup Page Intro")
+
     verify_form_field_messages = forms.CharField(
         max_length=None,
         validators=[validate_json],
@@ -329,6 +336,7 @@ class SettingForm(forms.Form):
             'ed_bg_page_header': self.cleaned_data.get('ed_bg_page_header'),
             'rec_submit_page_pre_form': self.cleaned_data.get('rec_submit_page_pre_form'),
             'signup_intro': self.cleaned_data.get('signup_intro'),
+            'complete_signup_intro': self.cleaned_data.get('complete_signup_intro', ''),
             'verify_form_field_messages': self.cleaned_data.get('verify_form_field_messages'),
             'profile_form_field_messages': self.cleaned_data.get('profile_form_field_messages'),
             'verify_email_subject': self.cleaned_data.get('verify_email_subject'),
@@ -920,6 +928,7 @@ class inst_app_language(SettingForm):
             'app_not_editable_message': 'Your application is no longer editable.',
             'ed_bg_page_header': 'Change this in settings',
             'signup_intro': 'Change this in Settings -> Instructor -> Application Language',
+            'complete_signup_intro': '',
             'verify_form_field_messages': '{}',
             'profile_form_field_messages': '{}',
             'verify_email_subject': 'Verify your email address',
