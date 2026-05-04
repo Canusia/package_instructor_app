@@ -203,6 +203,12 @@ class ApplicantCourseFinalStatusForm(forms.Form):
         widget=forms.HiddenInput
     )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from ..services.status_labels import get_status_choices
+        self.fields['decision'].choices = get_status_choices(
+            'ApplicantSchoolCourse', ApplicantSchoolCourse.STATUS_OPTIONS)
+
     def save(self):
         data = self.cleaned_data
 
@@ -245,6 +251,10 @@ class ApplicantReviewForm(forms.Form):
     def __init__(self, *args, review_form_config=None, mentor_choices=None, **kwargs):
         super().__init__(*args, **kwargs)
         config = review_form_config or {}
+
+        from ..services.status_labels import get_status_choices
+        self.fields['decision'].choices = get_status_choices(
+            'ApplicantCourseReviewer', ApplicantCourseReviewer.STATUS_OPTIONS)
 
         for field_name, default_label in self.FIELD_DEFAULTS.items():
             field_config = config.get(field_name, {})
@@ -374,6 +384,10 @@ class EditTeacherApplicationForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        from ..services.status_labels import get_status_choices
+        self.fields['status'].choices = get_status_choices(
+            'TeacherApplication', TeacherApplication.STATUS_OPTIONS)
 
         self.fields['assigned_to'].queryset = CustomUser.objects.filter(
             is_staff=True,
@@ -561,11 +575,17 @@ class EdBgForm(forms.Form):
         widget=forms.TextInput(attrs={'class': 'col-8'})
     )
 
+    previously_enrolled_in_college = forms.ChoiceField(
+        required=False,
+        label='Have you previously enrolled in college?',
+        choices=[('', '---'), ('Yes', 'Yes'), ('No', 'No')],
+    )
+
     CONFIGURABLE_FIELDS = [
         'other_name', 'credits_earned', 'masters_level_credits',
         'grad_courses', 'undergrad_program', 'certified_states',
         'certified_subjects', 'highschool_years', 'college_years', 'courses_taught',
-        'course_offering_format', 'students_per_class',
+        'course_offering_format', 'students_per_class', 'previously_enrolled_in_college',
     ]
 
     def __init__(self, *args, **kwargs):
@@ -614,7 +634,8 @@ class EdBgForm(forms.Form):
         for field in ['credits_earned', 'masters_level_credits', 'grad_courses',
                       'undergrad_program', 'certified_states', 'certified_subjects',
                       'highschool_years', 'college_years', 'courses_taught',
-                      'course_offering_format', 'students_per_class']:
+                      'course_offering_format', 'students_per_class',
+                      'previously_enrolled_in_college']:
             ed_bg_data[field] = self.cleaned_data.get(field, '')
 
         user.education_background = ed_bg_data

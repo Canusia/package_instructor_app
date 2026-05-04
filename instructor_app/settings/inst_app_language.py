@@ -272,6 +272,14 @@ class SettingForm(forms.Form):
         ),
     )
 
+    status_labels = forms.CharField(
+        max_length=None,
+        required=False,
+        validators=[validate_json],
+        widget=forms.HiddenInput(),
+        label="Status Label Customisations",
+    )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -334,6 +342,7 @@ class SettingForm(forms.Form):
             'reviewer_role_config': self.cleaned_data.get('reviewer_role_config', '{}'),
             'review_form_config': self.cleaned_data.get('review_form_config', '{}'),
             'faculty_review_teacher_info': self.cleaned_data.get('faculty_review_teacher_info', ''),
+            'status_labels': self.cleaned_data.get('status_labels', '{}'),
         }
 
 class inst_app_language(SettingForm):
@@ -471,7 +480,9 @@ class inst_app_language(SettingForm):
         super().__init__(*args, **kwargs)
 
         from ..models.teacher_applicant import TeacherApplication
-        self.fields['fc_review_status_label'].choices = TeacherApplication.STATUS_OPTIONS
+        from ..services.status_labels import get_status_choices
+        self.fields['fc_review_status_label'].choices = get_status_choices(
+            'TeacherApplication', TeacherApplication.STATUS_OPTIONS)
 
         self.request = request
         self.helper = FormHelper()
@@ -495,6 +506,7 @@ class inst_app_language(SettingForm):
             ('courses_taught', 'Subjects taught related to course'),
             ('course_offering_format', 'Do you anticipate teaching College courses as stand-alone courses, in conjunction with AP, or blended with non-college courses?'),
             ('students_per_class', 'How many students do you anticipate registering for College credits in each class?'),
+            ('previously_enrolled_in_college', 'Have you previously enrolled in college?'),
         ]
 
         eb_rows_html = ""
@@ -792,6 +804,83 @@ class inst_app_language(SettingForm):
             '</script>'
         )
 
+        # Build status label customisation UI (one table per model)
+        from ..models.teacher_application import TeacherApplication
+        from ..models.applicant_school_course import ApplicantSchoolCourse
+        from ..models.applicant_course_reviewer import ApplicantCourseReviewer
+        from ..models.teacher_applicant_model import TeacherApplicant
+
+        status_label_models = [
+            ('TeacherApplication', 'Application Status', TeacherApplication.STATUS_OPTIONS),
+            ('ApplicantSchoolCourse', 'Course Decision Status', ApplicantSchoolCourse.STATUS_OPTIONS),
+            ('ApplicantCourseReviewer', 'Faculty Reviewer Decision', ApplicantCourseReviewer.STATUS_OPTIONS),
+            ('TeacherApplicant', 'Applicant Account Status', TeacherApplicant.STATUS_OPTIONS),
+        ]
+
+        status_labels_html = (
+            '<div id="status-labels-config-ui" class="card mb-3">'
+            '<div class="card-header"><h5 class="mb-0">Status Labels</h5></div>'
+            '<div class="card-body">'
+            '<p class="text-muted small">Customise how each status is displayed to staff and applicants. '
+            'Underlying values are unchanged — leave a label blank to use the default.</p>'
+        )
+        for model_name, group_label, options in status_label_models:
+            status_labels_html += (
+                f'<h6 class="mt-3">{group_label}</h6>'
+                '<table class="table table-sm table-bordered">'
+                '<thead><tr>'
+                '<th style="width:40%">Default Label</th>'
+                '<th>Custom Label</th>'
+                '</tr></thead><tbody>'
+            )
+            for key, default_label in options:
+                if key == '---':
+                    continue
+                status_labels_html += (
+                    '<tr>'
+                    f'<td>{default_label}</td>'
+                    '<td>'
+                    f'<input type="text" class="form-control form-control-sm sl-input" '
+                    f'data-model="{model_name}" data-key="{key}" placeholder="{default_label}">'
+                    '</td>'
+                    '</tr>'
+                )
+            status_labels_html += '</tbody></table>'
+        status_labels_html += '</div></div>'
+
+        status_labels_js = (
+            '<script>'
+            'function initStatusLabelsConfig(){'
+            '  var $hidden=$("input[name=\'status_labels\']");'
+            '  if(!$hidden.length)return;'
+            '  var $ui=$("#status-labels-config-ui");'
+            '  if(!$ui.length)return;'
+            '  if($ui.data("sl-init"))return;'
+            '  $ui.data("sl-init",true);'
+            '  var config={};'
+            '  try{config=JSON.parse($hidden.val()||"{}");}catch(e){config={};}'
+            '  $ui.find(".sl-input").each(function(){'
+            '    var m=$(this).data("model");var k=$(this).data("key");'
+            '    if(config[m]&&config[m][k])$(this).val(config[m][k]);'
+            '  });'
+            '  function sync(){'
+            '    var result={};'
+            '    $ui.find(".sl-input").each(function(){'
+            '      var v=$(this).val().trim();if(!v)return;'
+            '      var m=$(this).data("model");var k=$(this).data("key");'
+            '      if(!result[m])result[m]={};'
+            '      result[m][k]=v;'
+            '    });'
+            '    $hidden.val(JSON.stringify(result));'
+            '  }'
+            '  $ui.on("input",".sl-input",sync);'
+            '  $hidden.closest("form").on("submit",sync);'
+            '}'
+            '$(document).ready(function(){initStatusLabelsConfig();});'
+            '$(document).ajaxComplete(function(){initStatusLabelsConfig();});'
+            '</script>'
+        )
+
         # Build layout with config UIs inserted before their hidden fields
         field_keys = list(self.fields.keys())
         layout_fields = []
@@ -802,6 +891,8 @@ class inst_app_language(SettingForm):
                 layout_fields.append(HTML(reviewer_role_config_html))
             if key == 'review_form_config':
                 layout_fields.append(HTML(review_form_config_html))
+            if key == 'status_labels':
+                layout_fields.append(HTML(status_labels_html))
             layout_fields.append(key)
 
         self.helper.layout = Layout(
@@ -809,6 +900,7 @@ class inst_app_language(SettingForm):
             HTML(ed_bg_js),
             HTML(reviewer_role_config_js),
             HTML(review_form_config_js),
+            HTML(status_labels_js),
             *layout_fields
         )
 
@@ -839,6 +931,7 @@ class inst_app_language(SettingForm):
             'reviewer_role_config': '{"Faculty": 1}',
             'review_form_config': '{"decision": {"visible": true, "label": ""}, "comment": {"visible": true, "label": ""}, "mentor": {"visible": false, "label": ""}}',
             'faculty_review_teacher_info': FACULTY_REVIEW_TEACHER_INFO_DEFAULT,
+            'status_labels': '{}',
         }
 
         try:

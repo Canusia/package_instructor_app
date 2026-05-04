@@ -19,6 +19,7 @@ from cis.serializers.course import CourseSerializer
 class TeacherApplicantSerializer(serializers.ModelSerializer):
     user = CustomUserSerializer()
     verify_email_url = serializers.CharField(read_only=True)
+    status_label = serializers.SerializerMethodField()
 
     class Meta:
         model = TeacherApplicant
@@ -27,7 +28,11 @@ class TeacherApplicantSerializer(serializers.ModelSerializer):
         datatables_always_serialize = [
             'id',
             'verify_email_url',
+            'status_label',
         ]
+
+    def get_status_label(self, obj):
+        return obj.get_status_display()
 
 
 class TeacherApplicationSerializer(serializers.ModelSerializer):
@@ -43,12 +48,13 @@ class TeacherApplicationSerializer(serializers.ModelSerializer):
     ce_url = serializers.CharField(
         read_only=True
     )
-    
+
     attending_si_year = serializers.CharField(
         read_only=True
     )
 
     missing_items = serializers.ListField(read_only=True, allow_empty=True)
+    status_label = serializers.SerializerMethodField()
 
     class Meta:
         model = TeacherApplication
@@ -59,7 +65,11 @@ class TeacherApplicationSerializer(serializers.ModelSerializer):
             'ce_url',
             'missing_items',
             'attending_si_year',
+            'status_label',
         ]
+
+    def get_status_label(self, obj):
+        return obj.get_status_display()
 
 class ApplicantCourseListSerializer(serializers.ModelSerializer):
     """Lightweight serializer for applicant-facing course list."""
@@ -83,16 +93,24 @@ class ApplicantSchoolCourseSerializer(serializers.ModelSerializer):
     course = CourseSerializer()
     highschool = HighSchoolSerializer()
     starting_academic_year = AcademicYearSerializer()
+    status_label = serializers.SerializerMethodField()
 
     class Meta:
         model = ApplicantSchoolCourse
         fields = '__all__'
-        
+
+    def get_status_label(self, obj):
+        return obj.get_status_display()
+
 class ApplicantCourseReviewerSerializer(serializers.ModelSerializer):
     reviewer = CustomUserSerializer()
     application_course = ApplicantSchoolCourseSerializer()
+    status_label = serializers.SerializerMethodField()
 
     assigned_on = serializers.DateField(format='%m/%d/%Y')
     class Meta:
         model = ApplicantCourseReviewer
         fields = '__all__'
+
+    def get_status_label(self, obj):
+        return obj.get_status_display()

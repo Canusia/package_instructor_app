@@ -69,7 +69,9 @@ jQuery(document).ready(function ($) {
 
     $(document).on('click', '.save-reviewer-status', function () {
         var id = $(this).data('id');
-        var status = $('.reviewer-status-select[data-id="' + id + '"]').val();
+        var $select = $('.reviewer-status-select[data-id="' + id + '"]');
+        var status = $select.val();
+        var statusLabel = $select.find('option:selected').text();
 
         $.ajax({
             type: "POST",
@@ -80,7 +82,7 @@ jQuery(document).ready(function ($) {
                 csrfmiddlewaretoken: csrfToken
             },
             success: function (response) {
-                $('.reviewer-status-display[data-id="' + id + '"]').text(status).show();
+                $('.reviewer-status-display[data-id="' + id + '"]').text(statusLabel).show();
                 $('.reviewer-status-edit[data-id="' + id + '"]').hide();
                 swal("", response.message, response.status);
             },

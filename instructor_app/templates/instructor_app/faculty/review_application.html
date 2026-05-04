@@ -48,7 +48,7 @@
                             {% if course_review.status != '---' %}
                             <div class="row mb-2 p-2">
                                 <p class="alert alert-info">You last reviewed the application and marked it as
-                                    {{ course_review.status }}.<br><br>You can update your recommendation until the
+                                    {{ course_review.get_status_display }}.<br><br>You can update your recommendation until the
                                     course administrator has updated the application.</p>
                             </div>
                             {% endif %}
@@ -59,7 +59,7 @@
                                     <span class="profile_label">Your Recommendation</span>
                                 </div>
                                 <div class="col-md-12">
-                                    {{ course_review.status }}
+                                    {{ course_review.get_status_display }}
                                 </div>
                             </div>
                             {% if course_review.status != '---' %}
@@ -146,7 +146,7 @@
                                 <span class="profile_label">Status</span>
                             </div>
                             <div class="col-md-4">
-                                {{ record.status }}
+                                {{ record.get_status_display }}
                             </div>
                         </div>
                     </div>
@@ -225,6 +225,7 @@
                     {{ ed_bg_form.courses_taught|as_crispy_field }}
                     {{ ed_bg_form.course_offering_format|as_crispy_field }}
                     {{ ed_bg_form.students_per_class|as_crispy_field }}
+                    {{ ed_bg_form.previously_enrolled_in_college|as_crispy_field }}
                     {% endif %}
 
                     <h5 class="mt-5 card-title">Application Uploads</h5>

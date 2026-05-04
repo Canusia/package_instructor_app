@@ -47,6 +47,14 @@ class TeacherApplication(models.Model):
 
     misc_info = JSONField(blank=True, null=True)
 
+    def get_status_display(self):
+        from ..services.status_labels import get_status_label
+        return get_status_label('TeacherApplication', self.status, dict(self.STATUS_OPTIONS).get(self.status, self.status))
+
+    @property
+    def status_display(self):
+        return self.get_status_display()
+
     highschool = models.ForeignKey(
         'cis.HighSchool', on_delete=models.PROTECT, blank=True, null=True, related_name='inst_app_teacherapplication_set')
     highschool_info = JSONField(blank=True, null=True)
@@ -207,17 +215,20 @@ class TeacherApplication(models.Model):
 
     @property
     def status_for_teacher(self):
-        if self.status == get_fc_review_status():
-            return 'Under Review'
+        from ..services.status_labels import get_status_label
 
-        if self.status in [
+        if self.status == get_fc_review_status():
+            key = 'Under Review'
+        elif self.status in [
             'Denied',
             'Conditionally accepted',
             'Accepted'
         ]:
-            return 'Decision Made'
+            key = 'Decision Made'
+        else:
+            key = self.status
 
-        return self.status
+        return get_status_label('TeacherApplication', key, key)
 
     @property
     def get_status_history(self):

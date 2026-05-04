@@ -34,6 +34,14 @@ class ApplicantSchoolCourse(models.Model):
     class Meta:
         unique_together = ['teacherapplication', 'course', 'highschool']
 
+    def get_status_display(self):
+        from ..services.status_labels import get_status_label
+        return get_status_label('ApplicantSchoolCourse', self.status, dict(self.STATUS_OPTIONS).get(self.status, self.status))
+
+    @property
+    def status_display(self):
+        return self.get_status_display()
+
     @property
     def reviewers_asHTML(self):
         from .applicant_course_reviewer import ApplicantCourseReviewer

@@ -157,6 +157,7 @@ def review_application(request, record_id):
         'courses_taught': ed_bg.get('courses_taught'),
         'course_offering_format': ed_bg.get('course_offering_format'),
         'students_per_class': ed_bg.get('students_per_class'),
+        'previously_enrolled_in_college': ed_bg.get('previously_enrolled_in_college'),
     }
     form = EdBgForm(initial=initial)
 

@@ -42,6 +42,10 @@ class teacher_applications(forms.Form):
 
         self.request = request
 
+        from ..services.status_labels import get_status_choices
+        self.fields['status'].choices = get_status_choices(
+            'TeacherApplication', TeacherApplication.STATUS_OPTIONS)
+
         self.helper = FormHelper()
         self.helper.attrs = {'target': '_blank'}
         self.helper.form_method = 'POST'
@@ -88,7 +92,7 @@ class teacher_applications(forms.Form):
             'user.email': 'Email',
             'user.primary_phone': 'Phone',
             'highschool': 'High School',
-            'status': 'Status',
+            'status_display': 'Status',
             'createdon': 'Created On',
             'assigned_to': 'Assigned To',
         }

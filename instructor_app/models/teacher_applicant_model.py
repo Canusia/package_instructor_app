@@ -30,6 +30,14 @@ class TeacherApplicant(models.Model):
     def __str__(self):
         return f"{self.user.first_name} {self.user.last_name}"
 
+    def get_status_display(self):
+        from ..services.status_labels import get_status_label
+        return get_status_label('TeacherApplicant', self.status, dict(self.STATUS_OPTIONS).get(self.status, self.status))
+
+    @property
+    def status_display(self):
+        return self.get_status_display()
+
     class Meta:
         ordering = ['user__first_name']
 

@@ -60,6 +60,12 @@ class course_reviewers(forms.Form):
 
         self.request = request
 
+        from ..services.status_labels import get_status_choices
+        self.fields['review_status'].choices = get_status_choices(
+            'ApplicantCourseReviewer', ApplicantCourseReviewer.STATUS_OPTIONS)
+        self.fields['teacher_app_status'].choices = get_status_choices(
+            'TeacherApplication', TeacherApplication.STATUS_OPTIONS)
+
         course_choices = [
             (str(c.id), str(c))
             for c in Course.objects.all().order_by('name')
@@ -127,13 +133,13 @@ class course_reviewers(forms.Form):
             'application_course.teacherapplication.user.last_name': 'Teacher Last Name',
             'application_course.teacherapplication.user.first_name': 'Teacher First Name',
             'application_course.teacherapplication.user.email': 'Teacher Email',
-            'application_course.teacherapplication.status': 'Application Status',
+            'application_course.teacherapplication.status_display': 'Application Status',
             'application_course.teacherapplication.highschool': 'High School',
             'application_course.course': 'Course',
             'reviewer.last_name': 'Reviewer Last Name',
             'reviewer.first_name': 'Reviewer First Name',
             'reviewer.email': 'Reviewer Email',
-            'status': 'Review Status',
+            'status_display': 'Review Status',
             'assigned_on': 'Assigned On',
         }
 

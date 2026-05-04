@@ -35,6 +35,14 @@ class ApplicantCourseReviewer(models.Model):
     class Meta:
         unique_together = ['reviewer', 'application_course']
 
+    def get_status_display(self):
+        from ..services.status_labels import get_status_label
+        return get_status_label('ApplicantCourseReviewer', self.status, dict(self.STATUS_OPTIONS).get(self.status, self.status))
+
+    @property
+    def status_display(self):
+        return self.get_status_display()
+
     def notify_reviewer(self):
         from ..settings.teacher_application_email import teacher_application_email as tapp_settings
 

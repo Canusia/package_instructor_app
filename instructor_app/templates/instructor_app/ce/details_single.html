@@ -14,7 +14,7 @@
 </style>
 
 <h2>{{ record }}</h2>
-<p><strong>Status:</strong> {{ record.status }} &nbsp;&nbsp; <strong>Submitted On:</strong> {{ record.submitted_on }}</p>
+<p><strong>Status:</strong> {{ record.get_status_display }} &nbsp;&nbsp; <strong>Submitted On:</strong> {{ record.submitted_on }}</p>
 <hr>
 
 <!-- Application Details -->
@@ -25,7 +25,7 @@
     <tr><td class="label">Email</td><td>{{ record.user.email }}</td></tr>
     <tr><td class="label">Phone</td><td>{{ record.user.primary_phone }}</td></tr>
     <tr><td class="label">High School</td><td>{{ record.highschool }}</td></tr>
-    <tr><td class="label">Status</td><td>{{ record.status }}</td></tr>
+    <tr><td class="label">Status</td><td>{{ record.get_status_display }}</td></tr>
     <tr><td class="label">EMPLID</td><td>{{ record.user.psid }}</td></tr>
     <tr><td class="label">Decision Letter Sent</td><td>{{ record.misc_info.decision_letter_sent_on }}</td></tr>
     <tr><td class="label">Attending Academic Year</td><td>{{ record.attending_si_year }}</td></tr>
@@ -41,7 +41,7 @@
         <td>{{ course.course.name }}</td>
         <td>{{ course.course.title }}</td>
         <td>{{ course.highschool }}</td>
-        <td>{{ course.status }}</td>
+        <td>{{ course.get_status_display }}</td>
     </tr>
     {% endfor %}
 </table>
@@ -74,6 +74,7 @@
     {% if ed_bg.college_years %}<tr><td>Years Teaching College</td><td>{{ ed_bg.college_years }}</td></tr>{% endif %}
     {% if ed_bg.course_offering_format %}<tr><td>Anticipated Course Offering Format</td><td>{{ ed_bg.course_offering_format }}</td></tr>{% endif %}
     {% if ed_bg.students_per_class %}<tr><td>Anticipated Students Per Class</td><td>{{ ed_bg.students_per_class }}</td></tr>{% endif %}
+    {% if ed_bg.previously_enrolled_in_college %}<tr><td>Previously Enrolled in College</td><td>{{ ed_bg.previously_enrolled_in_college }}</td></tr>{% endif %}
 </table>
 {% endif %}
 

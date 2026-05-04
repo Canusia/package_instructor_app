@@ -22,3 +22,10 @@ def recommendations_required():
     """Return True if recommendations_needed > 0 in inst_app_language settings."""
     from ..settings.inst_app_language import inst_app_language
     return int(inst_app_language.from_db().get('recommendations_needed') or 0) > 0
+
+
+@register.simple_tag
+def status_label(model_name, key, default=None):
+    """Look up the customised display label for a status key."""
+    from ..services.status_labels import get_status_label
+    return get_status_label(model_name, key, default)

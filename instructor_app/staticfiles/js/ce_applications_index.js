@@ -114,7 +114,11 @@ $(document).ready(function () {
             }
         });
         cols.push({ searchable: false, orderable: false }); // courses
-        cols.push(null); // status
+        cols.push({
+            render: function (data, type, row) {
+                return row.status_label || row.status || '';
+            }
+        }); // status
         if (hasMissingItems) {
             cols.push({
                 searchable: false,
@@ -277,7 +281,11 @@ $(document).ready(function () {
                 }
             },
             null, // email
-            null, // status
+            {
+                render: function (data, type, row) {
+                    return row.status_label || row.status || '';
+                }
+            }, // status
             {
                 render: function (data, type, row) {
                     return row.account_verified ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-warning">No</span>';
@@ -287,9 +295,26 @@ $(document).ready(function () {
                 searchable: false,
                 orderable: false,
                 render: function (data, type, row) {
-                    return "<a class='btn btn-sm btn-outline-primary' href='" + row.verify_email_url + "' target='_blank'><i class='fas fa-link'></i> Verify Link</a>";
+                    return "<button type='button' class='btn btn-sm btn-outline-primary show-verify-link' data-url='" + row.verify_email_url + "'><i class='fas fa-link'></i> Verify Link</button>";
                 }
             }
         ]
     }, selectConfig));
+
+    $(document).on('click', '.show-verify-link', function () {
+        var url = $(this).data('url') || '';
+        $('#verify-link-modal-input').val(url);
+        $('#verify-link-modal-copied').hide();
+        $('#verify-link-modal').modal('show');
+    });
+
+    $(document).on('click', '#verify-link-modal-copy', function () {
+        var $input = $('#verify-link-modal-input');
+        $input.trigger('select');
+        $input[0].setSelectionRange(0, 99999);
+        try {
+            document.execCommand('copy');
+            $('#verify-link-modal-copied').show();
+        } catch (e) { /* noop */ }
+    });
 });

@@ -1,5 +1,6 @@
 {% load templatehelpers %}
 {% load crispy_forms_tags %}
+{% load instructor_app_tags %}
 
 
 <table class="table table-striped">
@@ -19,13 +20,13 @@
                 <td>{{r.assigned_on|date:'m/d/Y'}}</td>
                 <td>{{r.reviewer.first_name}} {{r.reviewer.last_name}}</td>
                 <td>
-                    <span class="reviewer-status-display" data-id="{{r.id}}">{{r.status|safe}}</span>
+                    <span class="reviewer-status-display" data-id="{{r.id}}">{% status_label "ApplicantCourseReviewer" r.status r.status %}</span>
                     <span class="reviewer-status-edit" data-id="{{r.id}}" style="display:none;">
                         <select class="form-control form-control-sm reviewer-status-select" data-id="{{r.id}}">
                             <option value="---" {% if r.status == '---' %}selected{% endif %}>---</option>
-                            <option value="Approved" {% if r.status == 'Approved' %}selected{% endif %}>Approved</option>
-                            <option value="Declined" {% if r.status == 'Declined' %}selected{% endif %}>Declined</option>
-                            <option value="Need more information" {% if r.status == 'Need more information' %}selected{% endif %}>Need more information</option>
+                            <option value="Approved" {% if r.status == 'Approved' %}selected{% endif %}>{% status_label "ApplicantCourseReviewer" "Approved" %}</option>
+                            <option value="Declined" {% if r.status == 'Declined' %}selected{% endif %}>{% status_label "ApplicantCourseReviewer" "Declined" %}</option>
+                            <option value="Need more information" {% if r.status == 'Need more information' %}selected{% endif %}>{% status_label "ApplicantCourseReviewer" "Need more information" %}</option>
                         </select>
                         <button class="btn btn-sm btn-primary mt-1 save-reviewer-status" data-id="{{r.id}}">Save</button>
                         <button class="btn btn-sm btn-secondary mt-1 cancel-reviewer-status" data-id="{{r.id}}">Cancel</button>

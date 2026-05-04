@@ -30,7 +30,11 @@ $(document).ready(function () {
                     searchable: false,
                     orderable: false
                 },
-                null,
+                {
+                    render: function (data, type, row) {
+                        return row.status_label || row.status || '';
+                    }
+                },
                 {
                     searchable: false,
                     orderable: false,
