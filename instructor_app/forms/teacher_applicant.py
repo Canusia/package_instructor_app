@@ -338,13 +338,11 @@ class EditTeacherApplicationForm(forms.Form):
     participating_acad_year = forms.ChoiceField(
         required=False,
         choices=[],
-        help_text='If approved to attend',
-        label='Attending Academic Year'
+        label='Starting Academic Year'
     )
-    
+
     psid = forms.CharField(
         required=False,
-        help_text='If approved to attend',
         label='EMPLID'
     )
 
@@ -377,7 +375,6 @@ class EditTeacherApplicationForm(forms.Form):
     checklist = forms.MultipleChoiceField(
         required=False,
         label='Checklist',
-        help_text='If approved to attend',
         widget=forms.CheckboxSelectMultiple(),
         choices=[]
     )

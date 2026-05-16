@@ -35,6 +35,18 @@ def index(request):
     user = request.user
 
     if request.method == 'POST':
+        if inst_app_language.from_db().get('is_accepting_new', 'No') != 'Yes':
+            messages.add_message(
+                request,
+                messages.ERROR,
+                'New applications are not being accepted at this time.',
+                'list-group-item-danger'
+            )
+            return redirect('instructor_app:instructor_apps')
+        TeacherApplicant.objects.get_or_create(
+            user=user,
+            defaults={'account_verified': True}
+        )
         new_app = TeacherApplication.create_new(user)
         messages.add_message(
             request,
@@ -51,11 +63,15 @@ def index(request):
         user__id=user.id
     ).order_by('-createdon')
 
+    app_settings = inst_app_language.from_db()
+    accepting_applications = app_settings.get('is_accepting_new', 'No') == 'Yes'
+
     return render(
         request,
         'instructor_app/instructor/applications.html',
         {
             'menu': draw_menu(INSTRUCTOR_MENU, 'instructor_apps', '', 'instructor'),
             'applications': applications,
-            'intro': inst_app_language.from_db().get('instructor_apps_blurb', 'Change me')
+            'intro': app_settings.get('instructor_apps_blurb', 'Change me'),
+            'accepting_applications': accepting_applications,
         })

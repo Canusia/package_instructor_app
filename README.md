@@ -273,6 +273,7 @@ In your root `urls.py`:
 path('instructor_app/', include('instructor_app.urls.applicant')),
 path('instructor/instructor_apps/', include('instructor_app.urls.instructor')),
 path('faculty/instructor_apps/', include('instructor_app.urls.faculty')),
+path('highschool_admin/instructor_apps/', include('instructor_app.urls.highschool_admin')),
 path('ce/instructor_apps/', include('instructor_app.urls.cis')),
 ```
 

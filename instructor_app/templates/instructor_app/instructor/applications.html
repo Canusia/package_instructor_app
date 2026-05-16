@@ -15,10 +15,12 @@
 
                     <h5 class="card-title">
                         Application(s)<small>
+                            {% if accepting_applications %}
                             <form action="" method="post" id="" class="float-right">
                                 {% csrf_token %}
                                 <input type="submit" class="btn btn-primary btn-sm" value="Start a New Application">
                             </form>
+                            {% endif %}
                         </small>
                     </h5>
 
