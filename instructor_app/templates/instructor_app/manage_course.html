@@ -133,7 +133,11 @@
                         <input type="submit" class="btn btn-primary btn-sm" name="submit"
                             value="Save and Add Another Course">&nbsp;&nbsp;
                         <input type="submit" class="btn btn-primary btn-sm" name="submit" value="Save and Continue">
+                        {% if recommendations_needed %}
                         <span class="text-muted"><br>Next: Recommendation Request</span>
+                        {% else %}
+                        <span class="text-muted"><br>Next: Educational Details</span>
+                        {% endif %}
                     </form>
                 </div>
             </div>

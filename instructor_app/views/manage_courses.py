@@ -91,6 +91,8 @@ def manage_course(request, record_id):
 
     api_url = mark_safe(reverse('ce_instructor_app:applicant_course_list-list') + f'?format=datatables&teacher_application_id={record_id}')
 
+    recommendations_needed = int(inst_app_language.from_db().get('recommendations_needed', '2') or 0)
+
     return render(
         request,
         'instructor_app/manage_course.html',
@@ -99,6 +101,7 @@ def manage_course(request, record_id):
             'form': form,
             'teacher_application': teacher_application,
             'api_url': api_url,
+            'recommendations_needed': recommendations_needed,
         }
     )
 
