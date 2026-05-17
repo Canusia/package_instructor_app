@@ -4,6 +4,7 @@
 {% load static %}
 {% load templatehelpers %}
 {% load crispy_forms_tags %}
+{% load instructor_app_tags %}
 
 {% block body %}
 <main>
@@ -68,7 +69,7 @@
                                     <span class="profile_label">Note to Institution Staff</span>
                                 </div>
                                 <div class="col-md-12">
-                                    {{ course_review.misc_info.reviewer_note|default:""|linebreaksbr }}
+                                    {{ course_review.misc_info.reviewer_note|default:""|br_to_newline|linebreaksbr }}
                                 </div>
                             </div>
                             {% endif %}
@@ -87,7 +88,7 @@
                                     <span class="profile_label">Note to Institution Staff</span>
                                 </div>
                                 <div class="col-md-12">
-                                    {{ course_review.misc_info.reviewer_note|default:""|linebreaksbr }}
+                                    {{ course_review.misc_info.reviewer_note|default:""|br_to_newline|linebreaksbr }}
                                 </div>
                             </div>
                             <div class="row mb-2 p-2 border-bottom">

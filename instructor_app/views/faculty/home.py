@@ -105,7 +105,7 @@ def review_application(request, record_id):
             if not course_review.misc_info:
                 course_review.misc_info = {}
 
-            course_review.misc_info['reviewer_note'] = review_form.cleaned_data.get('comment', '') + '<br>-----------<br>' + course_review.misc_info.get('reviewer_note', '')
+            course_review.misc_info['reviewer_note'] = review_form.cleaned_data.get('comment', '') + '\n-----------\n' + course_review.misc_info.get('reviewer_note', '')
             course_review.misc_info['reviewed_on'] = datetime.now().strftime('%m/%d/%Y')
 
             if review_form.cleaned_data.get('mentor'):

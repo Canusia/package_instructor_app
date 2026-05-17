@@ -24,6 +24,19 @@ def recommendations_required():
     return int(inst_app_language.from_db().get('recommendations_needed') or 0) > 0
 
 
+@register.filter
+def br_to_newline(value):
+    """Convert literal <br>/<br/>/<br /> substrings to newlines.
+
+    Useful for legacy data that stored line breaks as HTML; chain with
+    |linebreaksbr to render line breaks while still escaping the rest.
+    """
+    if not value:
+        return value
+    import re
+    return re.sub(r'<br\s*/?>', '\n', str(value), flags=re.IGNORECASE)
+
+
 @register.simple_tag
 def status_label(model_name, key, default=None):
     """Look up the customised display label for a status key."""
