@@ -1,13 +1,5 @@
-import json
-
 from django.apps import apps
-from django.test import SimpleTestCase, TestCase
-
-from instructor_app.instructor_app.settings.teacher_applicant_profile import (
-    CONFIGURABLE_FIELDS,
-    DEFAULT_REQUIRED_FIELDS,
-    teacher_applicant_profile,
-)
+from django.test import SimpleTestCase
 
 
 class TeacherApplicantProfileSettingRegistrationTests(SimpleTestCase):
