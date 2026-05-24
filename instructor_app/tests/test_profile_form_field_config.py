@@ -36,3 +36,54 @@ class HiddenFieldsTests(TestCase):
         self.assertIn('email', form.fields)
         self.assertIn('password', form.fields)
         self.assertIn('confirm_password', form.fields)
+
+
+class RequiredFieldsTests(TestCase):
+    def test_listed_fields_become_required(self):
+        Setting.objects.update_or_create(
+            key='instructor_app.teacher_applicant_profile',
+            defaults={'value': {
+                'hidden_fields': [],
+                'required_fields': ['middle_name', 'alt_phone'],
+            }},
+        )
+        form = TeacherApplicantProfileForm()
+        self.assertTrue(form.fields['middle_name'].required)
+        self.assertTrue(form.fields['alt_phone'].required)
+        self.assertEqual(
+            form.fields['middle_name'].widget.attrs.get('data-validate-required'),
+            'true',
+        )
+
+    def test_unlisted_fields_become_optional(self):
+        Setting.objects.update_or_create(
+            key='instructor_app.teacher_applicant_profile',
+            defaults={'value': {
+                'hidden_fields': [],
+                # first_name normally required — flip it off
+                'required_fields': ['last_name'],
+            }},
+        )
+        form = TeacherApplicantProfileForm()
+        self.assertFalse(form.fields['first_name'].required)
+        self.assertNotIn(
+            'data-validate-required',
+            form.fields['first_name'].widget.attrs,
+        )
+        self.assertTrue(form.fields['last_name'].required)
+
+    def test_email_and_password_required_state_is_untouched(self):
+        Setting.objects.update_or_create(
+            key='instructor_app.teacher_applicant_profile',
+            defaults={'value': {
+                'hidden_fields': [],
+                # Note: these field names are not in CONFIGURABLE_FIELDS,
+                # so listing them should have no effect.
+                'required_fields': ['email', 'password'],
+            }},
+        )
+        form = TeacherApplicantProfileForm()
+        # email is declared with validate={'required': 'true'} and is not
+        # configurable — its required state stays True regardless of setting.
+        self.assertTrue(form.fields['email'].required)
+        self.assertTrue(form.fields['password'].required)
