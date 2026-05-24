@@ -87,3 +87,33 @@ class RequiredFieldsTests(TestCase):
         # configurable — its required state stays True regardless of setting.
         self.assertTrue(form.fields['email'].required)
         self.assertTrue(form.fields['password'].required)
+
+
+class MissingSettingFallbackTests(TestCase):
+    """When no Setting row exists (fresh deploy, or row deleted), the form
+    must keep its declarative DEFAULT_REQUIRED_FIELDS in effect — silently
+    making everything optional would let blank submissions through."""
+
+    def test_defaults_apply_when_setting_row_missing(self):
+        Setting.objects.filter(
+            key='instructor_app.teacher_applicant_profile',
+        ).delete()
+        form = TeacherApplicantProfileForm()
+        for name in ['first_name', 'last_name', 'primary_phone',
+                     'date_of_birth', 'home_address', 'city', 'state',
+                     'zip_code']:
+            self.assertTrue(
+                form.fields[name].required,
+                f'{name} should be required when setting row is missing',
+            )
+
+    def test_malformed_setting_value_falls_back_to_defaults(self):
+        # Superuser might save a non-dict via raw JSON editor; form should
+        # not crash and should keep declarative defaults.
+        Setting.objects.update_or_create(
+            key='instructor_app.teacher_applicant_profile',
+            defaults={'value': []},
+        )
+        form = TeacherApplicantProfileForm()
+        self.assertTrue(form.fields['first_name'].required)
+        self.assertIn('ssn', form.fields)  # default hidden list is empty

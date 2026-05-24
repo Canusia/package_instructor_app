@@ -1680,12 +1680,20 @@ class TeacherApplicantProfileForm(MetaFormMixin, forms.Form):
         """
         from ..settings.teacher_applicant_profile import (
             CONFIGURABLE_FIELDS,
+            DEFAULT_HIDDEN_FIELDS,
+            DEFAULT_REQUIRED_FIELDS,
             teacher_applicant_profile,
         )
 
         config = teacher_applicant_profile.from_db()
-        hidden = set(config.get('hidden_fields', []))
-        required = set(config.get('required_fields', []))
+        # Fall back to declarative defaults when the Setting row is missing
+        # (fresh deploy before register_settings, or row was deleted) so the
+        # form keeps its hard-coded required state instead of silently
+        # accepting blank submissions.
+        if not isinstance(config, dict):
+            config = {}
+        hidden = set(config.get('hidden_fields', DEFAULT_HIDDEN_FIELDS))
+        required = set(config.get('required_fields', DEFAULT_REQUIRED_FIELDS))
 
         for name in list(self.fields.keys()):
             if name not in CONFIGURABLE_FIELDS:
