@@ -1644,6 +1644,9 @@ class TeacherApplicantProfileForm(MetaFormMixin, forms.Form):
         # Load dynamic labels from DB
         self._load_field_labels_from_db()
 
+        # Apply admin-configured field visibility/required state
+        self._apply_field_visibility_and_required()
+
         # Populate initial values from applicant instance
         if applicant:
             self._populate_initial_from_instance(applicant)
@@ -1665,6 +1668,39 @@ class TeacherApplicantProfileForm(MetaFormMixin, forms.Form):
                     field.label = mark_safe(field_attr.get('label'))
                 if field_attr.get('help_text'):
                     field.help_text = mark_safe(field_attr.get('help_text'))
+
+    def _apply_field_visibility_and_required(self):
+        """Apply hidden_fields / required_fields from the admin setting.
+
+        Only fields in CONFIGURABLE_FIELDS are eligible — email, password,
+        and confirm_password are always present with their hard-coded
+        required state so the signup flow cannot be broken from the UI.
+        Keeps the client-side data-validate-required widget attr in sync
+        with the server-side field.required value.
+        """
+        from ..settings.teacher_applicant_profile import (
+            CONFIGURABLE_FIELDS,
+            teacher_applicant_profile,
+        )
+
+        config = teacher_applicant_profile.from_db()
+        hidden = set(config.get('hidden_fields', []))
+        required = set(config.get('required_fields', []))
+
+        for name in list(self.fields.keys()):
+            if name not in CONFIGURABLE_FIELDS:
+                continue
+            if name in hidden:
+                del self.fields[name]
+                continue
+            field = self.fields[name]
+            field.required = name in required
+            # Mirror to client-side validation hint
+            attrs = field.widget.attrs
+            if field.required:
+                attrs['data-validate-required'] = 'true'
+            else:
+                attrs.pop('data-validate-required', None)
 
     def _populate_initial_from_instance(self, applicant):
         """Populate form initial values from applicant using field metadata."""
