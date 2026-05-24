@@ -1670,45 +1670,72 @@ class TeacherApplicantProfileForm(MetaFormMixin, forms.Form):
                     field.help_text = mark_safe(field_attr.get('help_text'))
 
     def _apply_field_visibility_and_required(self):
-        """Apply hidden_fields / required_fields from the admin setting.
+        """Apply visible/required/label/weight config from the admin setting.
 
-        Only fields in CONFIGURABLE_FIELDS are eligible — email, password,
-        and confirm_password are always present with their hard-coded
-        required state so the signup flow cannot be broken from the UI.
-        Keeps the client-side data-validate-required widget attr in sync
-        with the server-side field.required value.
+        Only fields in CONFIGURABLE_FIELD_NAMES are eligible — email,
+        password, and confirm_password are always present with their
+        hard-coded required state so the signup flow cannot be broken
+        from the UI. Keeps the client-side data-validate-required widget
+        attr in sync with the server-side field.required value, applies
+        custom labels, and reorders configurable fields by ascending
+        weight (unweighted last).
         """
         from ..settings.teacher_applicant_profile import (
-            CONFIGURABLE_FIELDS,
-            DEFAULT_HIDDEN_FIELDS,
+            CONFIGURABLE_FIELD_NAMES,
             DEFAULT_REQUIRED_FIELDS,
             teacher_applicant_profile,
         )
 
         config = teacher_applicant_profile.from_db()
         # Fall back to declarative defaults when the Setting row is missing
-        # (fresh deploy before register_settings, or row was deleted) so the
-        # form keeps its hard-coded required state instead of silently
-        # accepting blank submissions.
+        # (fresh deploy before register_settings, or row was deleted) so
+        # the form keeps its hard-coded required state instead of
+        # silently accepting blank submissions.
         if not isinstance(config, dict):
             config = {}
-        hidden = set(config.get('hidden_fields', DEFAULT_HIDDEN_FIELDS))
-        required = set(config.get('required_fields', DEFAULT_REQUIRED_FIELDS))
+        visible  = set(config.get('visible',  CONFIGURABLE_FIELD_NAMES))
+        required = set(config.get('required', DEFAULT_REQUIRED_FIELDS))
+        labels   = config.get('labels', {}) or {}
+        weights  = config.get('weights', {}) or {}
 
+        # Pass 1 — hide / require / relabel.
         for name in list(self.fields.keys()):
-            if name not in CONFIGURABLE_FIELDS:
+            if name not in CONFIGURABLE_FIELD_NAMES:
                 continue
-            if name in hidden:
+            if name not in visible:
                 del self.fields[name]
                 continue
             field = self.fields[name]
             field.required = name in required
-            # Mirror to client-side validation hint
             attrs = field.widget.attrs
             if field.required:
                 attrs['data-validate-required'] = 'true'
             else:
                 attrs.pop('data-validate-required', None)
+            custom_label = labels.get(name)
+            if custom_label:
+                field.label = custom_label
+
+        # Pass 2 — reorder configurable fields by ascending weight
+        # (unweighted last). Non-configurable fields keep their relative
+        # order; the slots occupied by configurable fields are filled in
+        # weight order, using declaration order as a stable tie-break.
+        sorted_configurable = sorted(
+            (n for n in self.fields if n in CONFIGURABLE_FIELD_NAMES),
+            key=lambda n: (
+                weights.get(n) if weights.get(n) is not None else float('inf'),
+                CONFIGURABLE_FIELD_NAMES.index(n),
+            ),
+        )
+        new_fields = {}
+        sorted_iter = iter(sorted_configurable)
+        for name, field in self.fields.items():
+            if name in CONFIGURABLE_FIELD_NAMES:
+                next_name = next(sorted_iter)
+                new_fields[next_name] = self.fields[next_name]
+            else:
+                new_fields[name] = field
+        self.fields = new_fields
 
     def _populate_initial_from_instance(self, applicant):
         """Populate form initial values from applicant using field metadata."""
