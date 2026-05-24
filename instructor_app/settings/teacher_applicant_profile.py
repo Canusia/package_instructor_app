@@ -32,7 +32,8 @@ CONFIGURABLE_FIELDS = [
     ('home_address2',   'Home Address 2'),
     ('city',            'City'),
     ('state',           'State'),
-    ('zip_code',        'Zip/Postal Code'),
+    ('zip_code',                    'Zip/Postal Code'),
+    ('has_completed_masters_degree', "Have you completed a master's degree?"),
 ]
 
 CONFIGURABLE_FIELD_NAMES = [name for name, _ in CONFIGURABLE_FIELDS]
