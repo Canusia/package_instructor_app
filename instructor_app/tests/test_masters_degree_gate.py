@@ -75,3 +75,107 @@ class MastersDegreeSaveTests(TestCase):
         self.assertEqual(
             form.initial.get('has_completed_masters_degree'), 'no',
         )
+
+
+from datetime import date
+
+from cis.models.settings import Setting as _Setting
+from instructor_app.instructor_app.models.teacher_application import (
+    TeacherApplication,
+)
+
+
+def seed_tapp_email():
+    """Seed the tapp_email Setting so the post_save signal doesn't KeyError."""
+    _Setting.objects.update_or_create(
+        key='tapp_email',
+        defaults={'value': {
+            'new_applicant_email_subject': 'Test',
+            'new_applicant_email': 'Hello {{ first_name }}',
+        }},
+    )
+
+
+def set_global_recs(count):
+    """Helper: write inst_app_language.recommendations_needed."""
+    _Setting.objects.update_or_create(
+        key='inst_app_language',
+        defaults={'value': {'recommendations_needed': str(count)}},
+    )
+
+
+def set_profile_visible(field_names):
+    """Helper: write the field-config visible list."""
+    _Setting.objects.update_or_create(
+        key='instructor_app.teacher_applicant_profile',
+        defaults={'value': {
+            'visible': list(field_names),
+            'required': [],
+            'labels': {},
+            'weights': {},
+        }},
+    )
+
+
+class EffectiveRecommendationsNeededTests(TestCase):
+    def setUp(self):
+        self.applicant = make_applicant()
+        seed_tapp_email()
+        self.application = TeacherApplication.objects.create(
+            user=self.applicant.user,
+            createdon=date.today(),
+        )
+
+    def test_returns_zero_when_global_setting_is_zero(self):
+        set_global_recs(0)
+        set_profile_visible(['has_completed_masters_degree'])
+        self.applicant.meta = {'has_completed_masters_degree': 'no'}
+        self.applicant.save()
+        self.assertEqual(self.application.effective_recommendations_needed, 0)
+
+    def test_returns_global_count_when_field_hidden(self):
+        set_global_recs(2)
+        set_profile_visible(['first_name'])  # masters question hidden
+        self.applicant.meta = {'has_completed_masters_degree': 'yes'}
+        self.applicant.save()
+        # Even though applicant says yes, the field is hidden — gate bypassed.
+        self.assertEqual(self.application.effective_recommendations_needed, 2)
+
+    def test_returns_zero_when_applicant_has_masters(self):
+        set_global_recs(2)
+        set_profile_visible(['has_completed_masters_degree'])
+        self.applicant.meta = {'has_completed_masters_degree': 'yes'}
+        self.applicant.save()
+        self.assertEqual(self.application.effective_recommendations_needed, 0)
+
+    def test_returns_global_count_when_applicant_lacks_masters(self):
+        set_global_recs(2)
+        set_profile_visible(['has_completed_masters_degree'])
+        self.applicant.meta = {'has_completed_masters_degree': 'no'}
+        self.applicant.save()
+        self.assertEqual(self.application.effective_recommendations_needed, 2)
+
+    def test_unanswered_treated_as_no(self):
+        set_global_recs(2)
+        set_profile_visible(['has_completed_masters_degree'])
+        # applicant.meta is {} — the question hasn't been answered yet.
+        self.assertEqual(self.application.effective_recommendations_needed, 2)
+
+
+class HasReceivedRecommendationGateTests(TestCase):
+    def setUp(self):
+        self.applicant = make_applicant()
+        seed_tapp_email()
+        self.application = TeacherApplication.objects.create(
+            user=self.applicant.user,
+            createdon=date.today(),
+        )
+
+    def test_satisfied_when_applicant_has_masters_and_zero_received(self):
+        set_global_recs(2)
+        set_profile_visible(['has_completed_masters_degree'])
+        self.applicant.meta = {'has_completed_masters_degree': 'yes'}
+        self.applicant.save()
+        # No ApplicantRecommendation rows created; should still be True
+        # because the effective requirement is 0.
+        self.assertTrue(self.application.has_received_recommendation())

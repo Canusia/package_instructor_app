@@ -434,15 +434,57 @@ class TeacherApplication(models.Model):
             teacherapplication=self
         )
 
-    def has_received_recommendation(self):
+    @property
+    def effective_recommendations_needed(self):
+        """Number of recommendations this applicant must submit.
+
+        Wraps the global inst_app_language.recommendations_needed setting
+        with the masters-degree gate:
+
+        * If the global count is 0 → return 0 (recommendations disabled).
+        * Else if the has_completed_masters_degree profile field is
+          hidden (or the configurator row is missing) → return the
+          global count (gate bypassed).
+        * Else if the applicant answered 'yes' → return 0 (waived).
+        * Else (answered 'no' or unanswered) → return the global count.
+        """
         from ..settings.inst_app_language import inst_app_language
+        from ..settings.teacher_applicant_profile import (
+            CONFIGURABLE_FIELD_NAMES,
+            teacher_applicant_profile,
+        )
+
+        base = int(inst_app_language.from_db().get('recommendations_needed', '0') or 0)
+        if base == 0:
+            return 0
+
+        profile_cfg = teacher_applicant_profile.from_db() or {}
+        if not isinstance(profile_cfg, dict):
+            profile_cfg = {}
+        # Default visible list mirrors the configurator's behavior: if
+        # the row is unset, all configurable fields are visible.
+        visible = profile_cfg.get('visible', list(CONFIGURABLE_FIELD_NAMES))
+        if 'has_completed_masters_degree' not in visible:
+            return base
+
+        try:
+            meta = self.user.inst_app_teacherapplicant.meta or {}
+        except Exception:
+            meta = {}
+        if meta.get('has_completed_masters_degree') == 'yes':
+            return 0
+        return base
+
+    def has_received_recommendation(self):
         from .applicant_recommendation import ApplicantRecommendation
 
-        config = inst_app_language.from_db()
-
-        return True if ApplicantRecommendation.objects.filter(
-            teacher_application=self
-        ).count() >= int(config.get('recommendations_needed', '1')) else False
+        required = self.effective_recommendations_needed
+        if required == 0:
+            return True
+        received = ApplicantRecommendation.objects.filter(
+            teacher_application=self,
+        ).count()
+        return received >= required
 
     def has_recommender_submitted(self, rec_email):
         from .applicant_recommendation import ApplicantRecommendation
