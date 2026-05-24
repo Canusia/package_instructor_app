@@ -27,9 +27,12 @@ def manage_recommendation(request, record_id):
         )
 
     app_settings = inst_app_language.from_db()
-    recommendations_needed = int(app_settings.get('recommendations_needed', '2'))
+    # effective_recommendations_needed honors the masters-degree gate
+    # AND the global setting — see TeacherApplication for the rules.
+    recommendations_needed = teacher_application.effective_recommendations_needed
 
-    # If no recommendations needed, skip to next step
+    # If no recommendations needed (globally disabled OR applicant has
+    # a master's degree), skip to next step.
     if recommendations_needed == 0:
         return redirect(
             'applicant_app:manage_ed_bg',

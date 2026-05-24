@@ -179,3 +179,52 @@ class HasReceivedRecommendationGateTests(TestCase):
         # No ApplicantRecommendation rows created; should still be True
         # because the effective requirement is 0.
         self.assertTrue(self.application.has_received_recommendation())
+
+
+def _safe_force_login(client, user):
+    """force_login without triggering django_login_history's IP lookup."""
+    from django.contrib.auth.signals import user_logged_in
+    from django_login_history.models import post_login
+    user_logged_in.disconnect(post_login)
+    try:
+        client.force_login(user)
+    finally:
+        user_logged_in.connect(post_login)
+
+
+class ManageRecommendationSkipTests(TestCase):
+    def setUp(self):
+        self.applicant = make_applicant()
+        seed_tapp_email()
+        self.application = TeacherApplication.objects.create(
+            user=self.applicant.user,
+            createdon=date.today(),
+        )
+        _safe_force_login(self.client, self.applicant.user)
+
+    def test_skips_when_applicant_has_masters(self):
+        set_global_recs(2)
+        set_profile_visible(['has_completed_masters_degree'])
+        self.applicant.meta = {'has_completed_masters_degree': 'yes'}
+        self.applicant.save()
+
+        from django.urls import reverse
+        url = reverse('applicant_app:manage_recommendation',
+                      kwargs={'record_id': str(self.application.id)})
+        resp = self.client.get(url)
+        # Skipped → 302 redirect to manage_ed_bg
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn('manage_ed_bg', resp.url)
+
+    def test_renders_form_when_recs_required(self):
+        set_global_recs(2)
+        set_profile_visible(['has_completed_masters_degree'])
+        self.applicant.meta = {'has_completed_masters_degree': 'no'}
+        self.applicant.save()
+
+        from django.urls import reverse
+        url = reverse('applicant_app:manage_recommendation',
+                      kwargs={'record_id': str(self.application.id)})
+        resp = self.client.get(url)
+        # Not skipped → 200 with the request-recommendation page
+        self.assertEqual(resp.status_code, 200)
