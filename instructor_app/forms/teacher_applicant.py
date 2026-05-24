@@ -1623,6 +1623,21 @@ class TeacherApplicantProfileForm(MetaFormMixin, forms.Form):
     #     validate={'required': 'true'},
     # )
 
+    # ==================== Education ====================
+
+    has_completed_masters_degree = with_meta(
+        forms.ChoiceField(
+            label="Have you completed a master's degree?",
+            required=False,
+            choices=[
+                ('', 'Select an option'),
+                ('yes', 'Yes'),
+                ('no',  'No'),
+            ],
+            widget=forms.Select(attrs={'class': 'col-md-4 col-sm-12'}),
+        ),
+        target='skip',  # round-tripped through applicant.meta manually below
+    )
 
     # ==================== Form Methods ====================
 
@@ -1757,6 +1772,14 @@ class TeacherApplicantProfileForm(MetaFormMixin, forms.Form):
             except AttributeError:
                 pass
 
+        # Fields stored on applicant.meta are not driven by storage_target
+        # (target='skip' for the masters-degree question), so populate
+        # them explicitly here.
+        if applicant.meta:
+            if 'has_completed_masters_degree' in self.fields:
+                self.initial['has_completed_masters_degree'] = \
+                    applicant.meta.get('has_completed_masters_degree', '')
+
     def save(self, applicant=None):
         """Save form data to user model using metadata, handle password separately."""
         from datetime import datetime
@@ -1780,6 +1803,15 @@ class TeacherApplicantProfileForm(MetaFormMixin, forms.Form):
         user.username = user.email
 
         user.save()
+
+        # Persist applicant.meta-backed fields (target='skip' so the
+        # MetaFormMixin save path did not touch them).
+        if 'has_completed_masters_degree' in self.fields:
+            if applicant.meta is None:
+                applicant.meta = {}
+            applicant.meta['has_completed_masters_degree'] = (
+                self.cleaned_data.get('has_completed_masters_degree') or ''
+            )
 
         # Mark signup as complete
         applicant.account_verified_on = datetime.now()
