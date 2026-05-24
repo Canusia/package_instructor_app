@@ -27,6 +27,12 @@ class TeacherApplicant(models.Model):
     account_verified = models.BooleanField(default=False)
     account_verified_on = models.DateTimeField(blank=True, null=True)
 
+    # Per-applicant key/value storage. Currently holds the answer to the
+    # "Have you completed a master's degree?" profile question; see
+    # TeacherApplication.effective_recommendations_needed for how it
+    # gates the recommendation requirement.
+    meta = models.JSONField(default=dict, blank=True)
+
     def __str__(self):
         return f"{self.user.first_name} {self.user.last_name}"
 
