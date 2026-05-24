@@ -92,12 +92,20 @@ class teacher_applicant_profile(SettingForm):
             'hidden_fields': list(DEFAULT_HIDDEN_FIELDS),
             'required_fields': list(DEFAULT_REQUIRED_FIELDS),
         }
-        setting, _ = Setting.objects.get_or_create(key=self.key)
+        try:
+            setting = Setting.objects.get(key=self.key)
+        except Setting.DoesNotExist:
+            setting = Setting()
+            setting.key = self.key
         setting.value = defaults
         setting.save()
 
     def run_record(self):
-        setting, _ = Setting.objects.get_or_create(key=self.key)
+        try:
+            setting = Setting.objects.get(key=self.key)
+        except Setting.DoesNotExist:
+            setting = Setting()
+            setting.key = self.key
         setting.value = self._to_python()
         setting.save()
         return JsonResponse({

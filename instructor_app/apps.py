@@ -65,6 +65,13 @@ class InstructorAppConfig(AppConfig):
             'description': '-',
             'categories': ['5']
         },
+        {
+            'app': 'instructor_app',
+            'name': 'teacher_applicant_profile',
+            'title': 'Teacher Applicant Profile Form',
+            'description': 'Hide/show and require/optional individual profile fields.',
+            'categories': ['5'],
+        },
     ]
 
     def ready(self):
@@ -133,6 +140,13 @@ class DevInstructorAppConfig(AppConfig):
             'title': 'Instructor Application Page',
             'description': '-',
             'categories': ['5']
+        },
+        {
+            'app': 'instructor_app.instructor_app',
+            'name': 'teacher_applicant_profile',
+            'title': 'Teacher Applicant Profile Form',
+            'description': 'Hide/show and require/optional individual profile fields.',
+            'categories': ['5'],
         },
     ]
 
