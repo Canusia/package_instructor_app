@@ -106,7 +106,14 @@ class SettingForm(forms.Form):
     # number of recommendations needed 0-3
     recommendations_needed = forms.IntegerField(
         min_value=0,
-        max_value=3
+        max_value=3,
+        label='Recommendations Needed',
+        help_text=(
+            'Number of recommendation letters each applicant must submit (0-3). '
+            'Set to 0 to disable the recommendation step entirely. '
+            'When the profile form includes the "Have you completed a master\'s degree?" '
+            'question, applicants who answer Yes are exempt from this requirement.'
+        ),
     )
 
     rec_req_blurb = forms.CharField(
