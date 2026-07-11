@@ -32,6 +32,8 @@ from ..forms.teacher_applicant import (
 from ..settings.inst_app_language import inst_app_language
 from ..utils import get_teacher_application
 
+from cis.page_messages import get_page_messages
+
 def manage_password(request):
 
     user = CustomUser.objects.get(id=request.user.id)
@@ -305,7 +307,8 @@ def dashboard(request):
         {
             'menu': draw_menu(INSTRUCTOR_APP_MENU, 'home', '', 'applicant'),
             'applications': applications,
-            'intro': inst_app_language.from_db().get('dashboard_blurb', 'Change me')
+            'intro': inst_app_language.from_db().get('dashboard_blurb', 'Change me'),
+            'page_messages': get_page_messages('applicant', 'dashboard', request),
         })
 
 def get_school_info(request):
