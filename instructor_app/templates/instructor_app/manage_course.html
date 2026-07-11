@@ -84,6 +84,34 @@
                     loadCourseDetails();
                 });
 
+                // Campus filter: show only courses in the selected campus (or
+                // courses with no campus). Client-side over the rendered course
+                // options; refresh the multipleSelect widget after rebuilding.
+                var courseCampusMap = {{ course_campus_map|default:"{}"|safe }};
+                var $courseSelect = $('#id_course');
+                var allCourseOptions = $courseSelect.find('option').clone();
+
+                function filterCoursesByCampus() {
+                    var campus = $('#id_campus').val() || '';
+                    $courseSelect.empty();
+                    allCourseOptions.each(function () {
+                        var val = $(this).val();
+                        if (!val) {                       // keep the "Select" option
+                            $courseSelect.append($(this).clone());
+                            return;
+                        }
+                        var courseCampus = courseCampusMap[val] || '';
+                        if (!campus || courseCampus === '' || courseCampus === campus) {
+                            $courseSelect.append($(this).clone());
+                        }
+                    });
+                    $courseSelect.val('');
+                    try { $courseSelect.multipleSelect('refresh'); } catch (e) {}
+                    loadCourseDetails();
+                }
+
+                $('#id_campus').change(filterCoursesByCampus);
+
                 loadCourseDetails();
 
                 var coursesTable = $('#selected_courses').DataTable({

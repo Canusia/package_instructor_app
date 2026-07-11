@@ -93,6 +93,9 @@ def manage_course(request, record_id):
 
     recommendations_needed = int(inst_app_language.from_db().get('recommendations_needed', '2') or 0)
 
+    import json
+    course_campus_map = json.dumps(getattr(form, 'course_campus_map', {}))
+
     return render(
         request,
         'instructor_app/manage_course.html',
@@ -102,6 +105,7 @@ def manage_course(request, record_id):
             'teacher_application': teacher_application,
             'api_url': api_url,
             'recommendations_needed': recommendations_needed,
+            'course_campus_map': mark_safe(course_campus_map),
         }
     )
 
