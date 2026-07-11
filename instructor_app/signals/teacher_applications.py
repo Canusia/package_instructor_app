@@ -110,8 +110,30 @@ def create_new_recommendation(sender, instance, created, **kwargs):
             to
         )
 
+@receiver(pre_save, sender=ApplicantCourseReviewer)
+def course_reviewer_status_updated(sender, instance, **kwargs):
+    """Record each reviewer status change into status_changed_on.
+
+    The faculty review page's "Recommendation History" renders
+    ApplicantCourseReviewer.get_status_history, which reads status_changed_on.
+    Without this the field is never written, so the history is always blank.
+    Kept minimal (no notifications) — the review view owns those side effects.
+    """
+    from datetime import datetime
+
+    previous_status = instance.tracker.previous('status')
+    status = instance.status
+
+    # No change, or still the "not yet reviewed" placeholder — nothing to log.
+    if previous_status == status or status in (None, '', '---'):
+        return
+
+    status_changed_on = instance.status_changed_on or {}
+    status_changed_on[datetime.now().strftime('%m/%d/%Y %I:%M:%S %p')] = status
+    instance.status_changed_on = status_changed_on
+
+
 @receiver(pre_save, sender=TeacherApplication)
-# @receiver(pre_save, sender=ApplicantCourseReviewer)
 def teacher_app_status_updated(sender, instance, **kwargs):
     from datetime import datetime
 
