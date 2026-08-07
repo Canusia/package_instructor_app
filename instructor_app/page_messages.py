@@ -3,7 +3,11 @@ from cis.page_messages import page_message, PageMessage
 
 
 def _has_no_application(user):
-    from instructor_app.instructor_app.models.teacher_applicant import TeacherApplication
+    # Relative import: this module ships flat in production
+    # (site-packages/instructor_app/) and nested in the editable-submodule dev
+    # layout (instructor_app/instructor_app/). An absolute path pins one layout
+    # and ModuleNotFoundErrors on the other.
+    from .models.teacher_application import TeacherApplication
     return not TeacherApplication.objects.filter(user__id=user.id).exists()
 
 
