@@ -22,6 +22,7 @@ from .actions import (
     remove_recommendation,
     remove_upload,
     delete_record,
+    revoke_applicant_role,
 )
 from .bulk_actions import do_bulk_action
 

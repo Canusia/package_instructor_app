@@ -29,6 +29,8 @@ from ...forms.teacher_applicant import (
     AppUploadForm
 )
 
+from cis.settings.instructor_portal import instructor_portal as portal_lang
+
 from ...settings.inst_app_language import inst_app_language
 
 def index(request):
@@ -72,6 +74,6 @@ def index(request):
         {
             'menu': draw_menu(INSTRUCTOR_MENU, 'instructor_apps', '', 'instructor'),
             'applications': applications,
-            'intro': app_settings.get('instructor_apps_blurb', 'Change me'),
+            'intro': portal_lang.from_db().get('instructor_apps_blurb', 'Change me'),
             'accepting_applications': accepting_applications,
         })

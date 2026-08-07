@@ -20,6 +20,7 @@ class TeacherApplicantSerializer(serializers.ModelSerializer):
     user = CustomUserSerializer()
     verify_email_url = serializers.CharField(read_only=True)
     status_label = serializers.SerializerMethodField()
+    revoke_url = serializers.SerializerMethodField()
 
     class Meta:
         model = TeacherApplicant
@@ -29,10 +30,21 @@ class TeacherApplicantSerializer(serializers.ModelSerializer):
             'id',
             'verify_email_url',
             'status_label',
+            'revoke_url',
         ]
 
     def get_status_label(self, obj):
         return obj.get_status_display()
+
+    def get_revoke_url(self, obj):
+        # CustomUserSerializer does not expose the user id, so the Applicants
+        # tab gets a ready-made URL rather than building one client-side.
+        from django.urls import reverse
+
+        return reverse(
+            'ce_instructor_app:revoke_applicant_access',
+            kwargs={'user_id': obj.user_id}
+        )
 
 
 class TeacherApplicationSerializer(serializers.ModelSerializer):

@@ -27,6 +27,15 @@ class TeacherApplicantViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         records = TeacherApplicant.objects.all()
+
+        # Applicants whose last application was deleted. They appear on no
+        # other tab, so this is the only way staff can reach them to revoke
+        # a role the delete prompt left behind.
+        if self.request.GET.get('no_applications', '').strip():
+            records = records.filter(
+                user__inst_app_teacherapplication_set__isnull=True
+            )
+
         pending_only = self.request.GET.get('pending_only', '').strip()
         if pending_only:
             records = records.filter(account_verified=False)

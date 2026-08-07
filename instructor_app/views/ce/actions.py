@@ -4,6 +4,9 @@ from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 from django.http import JsonResponse, HttpResponse
 from django.urls import reverse_lazy, reverse
+from django.views.decorators.http import require_POST
+
+from cis.models.customuser import CustomUser
 
 from ...models.teacher_applicant import (
     TeacherApplication,
@@ -13,6 +16,11 @@ from ...models.teacher_applicant import (
     ApplicationUpload
 )
 from ...models.teacher_application_note import TeacherApplicationNote
+
+from ...services.applicant_role import (
+    has_remaining_applications,
+    revoke_applicant_access,
+)
 
 from ...forms.teacher_applicant import (
     ApplicantCourseReviewerForm,
@@ -605,14 +613,48 @@ def delete_record(request, record_id):
     user = record.user
     record.delete()
 
-    # try to remove base user account if this was the only role
-    try:
-        user.delete()
-    except Exception:
-        pass
+    # The applicant role is revoked only if staff say so, from the follow-up
+    # prompt this response drives. The account itself is never deleted here.
+    revocable = not has_remaining_applications(user)
 
     return JsonResponse({
         'status': 'success',
         'message': 'Successfully deleted application',
+        'applicant_role_revocable': revocable,
+        'applicant_name': f'{user.first_name} {user.last_name}'.strip(),
+        'other_roles': [r for r in user.get_roles() if r != 'applicant'],
+        'revoke_url': reverse(
+            'ce_instructor_app:revoke_applicant_access',
+            kwargs={'user_id': user.id}
+        ),
         'redirect': reverse_lazy('ce_instructor_app:teacher_applications')
+    })
+
+
+@require_POST
+def revoke_applicant_role(request, user_id):
+    """
+    Remove the applicant role and record for a user with no applications left.
+
+    Called from the prompt that follows an application delete, and from the
+    Applicants tab for anyone that prompt was declined or missed for.
+    """
+    user = get_object_or_404(CustomUser, pk=user_id)
+    name = f'{user.first_name} {user.last_name}'.strip()
+
+    if not revoke_applicant_access(user):
+        return JsonResponse({
+            'status': 'error',
+            'message': f'{name} still has an application on file. '
+                       'Applicant access was left in place.'
+        })
+
+    retained = user.get_roles()
+    message = f'{name} no longer has applicant access.'
+    if retained:
+        message += f' Their {", ".join(retained)} access is unchanged.'
+
+    return JsonResponse({
+        'status': 'success',
+        'message': message
     })

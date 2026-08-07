@@ -1,4 +1,24 @@
-var table_all, table_active, table_reviewer, table_pending;
+var table_all, table_active, table_reviewer, table_pending, table_no_applications;
+
+// Tenants override CSRF_COOKIE_NAME (ewu uses 'ewu_csrftoken'), so reading the
+// cookie by Django's default name returns null and the POST 403s. The hidden
+// input rendered by {% csrf_token %} is named the same everywhere.
+function csrfToken() {
+    return $('input[name="csrfmiddlewaretoken"]').first().val() ||
+        getCookie('csrftoken');
+}
+
+// 403s and 500s return HTML, not JSON, so responseJSON is undefined.
+function ajaxErrorMessage(xhr) {
+    if (xhr.responseJSON && xhr.responseJSON.message) {
+        return xhr.responseJSON.message;
+    }
+    if (xhr.status === 403) {
+        return 'Your session may have expired, or you do not have permission. ' +
+            'Please reload the page and try again.';
+    }
+    return 'Something went wrong (HTTP ' + xhr.status + '). Please try again.';
+}
 
 setInterval(function () {
     if (!table_all.rows('.selected').any())
@@ -300,6 +320,86 @@ $(document).ready(function () {
             }
         ]
     }, selectConfig));
+
+    // Applicants w/o Applications tab. These applicants appear on no other
+    // tab, so this is the only place staff can clear a role the delete prompt
+    // left behind.
+    table_no_applications = $('#records_no_applications').DataTable({
+        fnDrawCallback: function () { $.unblockUI(); },
+        dom: dtDom,
+        buttons: [csvButton, printButton],
+        ajax: applicantApiUrl + '&no_applications=1',
+        rowId: 'id',
+        serverSide: true,
+        processing: true,
+        stateSave: true,
+        lengthMenu: [30, 50, 100],
+        order: [[0, 'asc']],
+        columns: [
+            {
+                render: function (data, type, row) {
+                    return row.user.last_name + ', ' + row.user.first_name;
+                }
+            },
+            null, // email
+            {
+                render: function (data, type, row) {
+                    return row.status_label || row.status || '';
+                }
+            },
+            {
+                searchable: false,
+                orderable: false,
+                render: function (data, type, row) {
+                    // Applicant names are self-registered, so they are
+                    // attacker-controlled and must not reach markup unescaped.
+                    return $('<button>')
+                        .attr('type', 'button')
+                        .addClass('btn btn-sm btn-outline-danger revoke-applicant')
+                        .attr('data-url', row.revoke_url)
+                        .attr('data-name', row.user.last_name + ', ' + row.user.first_name)
+                        .text('Remove applicant access')
+                        .prop('outerHTML');
+                }
+            }
+        ]
+    });
+
+    $(document).on('click', '.revoke-applicant', function () {
+        var url = $(this).data('url');
+        var name = $(this).data('name');
+
+        swal({
+            title: 'Remove applicant access?',
+            text: 'Remove applicant access and the applicant record for ' + name +
+                '? Their other roles and their user account are not affected.',
+            icon: 'warning',
+            buttons: ['Cancel', 'Remove applicant access']
+        }).then(function (confirmed) {
+            if (!confirmed) return;
+
+            $.blockUI();
+            $.ajax({
+                type: 'POST',
+                url: url,
+                headers: { 'X-CSRFToken': csrfToken() },
+                success: function (response) {
+                    $.unblockUI();
+                    swal({
+                        title: response.status == 'success' ? 'Done' : 'Not removed',
+                        text: response.message,
+                        icon: response.status
+                    }).then(function () {
+                        table_no_applications.ajax.reload();
+                    });
+                },
+                error: function (xhr) {
+                    $.unblockUI();
+                    swal('Error', ajaxErrorMessage(xhr), 'error');
+                }
+            });
+        });
+    });
 
     $(document).on('click', '.show-verify-link', function () {
         var url = $(this).data('url') || '';

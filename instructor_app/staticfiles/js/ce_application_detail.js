@@ -119,9 +119,81 @@ jQuery(document).ready(function ($) {
         });
     });
 
+    // 403s and 500s return HTML, not JSON, so responseJSON is undefined.
+    function ajaxErrorMessage(xhr) {
+        if (xhr.responseJSON && xhr.responseJSON.message) {
+            return xhr.responseJSON.message;
+        }
+        if (xhr.status === 403) {
+            return 'Your session may have expired, or you do not have permission. ' +
+                'Please reload the page and try again.';
+        }
+        return 'Something went wrong (HTTP ' + xhr.status + '). Please try again.';
+    }
+
+    // Leave the page the way the delete response asked us to.
+    function finishDelete(response) {
+        if (response.status != 'success') return;
+
+        if (window.frameElement !== null) {
+            // close the modal
+            window.parent.closeModal();
+        } else {
+            window.location = response.redirect;
+        }
+    }
+
+    // Asked only when the deleted application was the applicant's last one.
+    // Declining is fine — the applicant stays reachable from the Applicants
+    // tab, where the same action is available later.
+    function offerRoleRevocation(response) {
+        var prompt = response.applicant_name + ' has no other applications. ' +
+            'Remove their applicant access and applicant record?';
+
+        if (response.other_roles && response.other_roles.length) {
+            prompt += ' They will keep their ' +
+                response.other_roles.join(', ') + ' access.';
+        }
+
+        swal({
+            title: 'Remove applicant access?',
+            text: prompt,
+            icon: 'warning',
+            buttons: ['Keep applicant access', 'Remove applicant access']
+        }).then(function (confirmed) {
+            if (!confirmed) {
+                finishDelete(response);
+                return;
+            }
+
+            $.blockUI();
+            $.ajax({
+                type: 'POST',
+                url: response.revoke_url,
+                headers: { 'X-CSRFToken': csrfToken },
+                success: function (revokeResponse) {
+                    $.unblockUI();
+                    swal({
+                        title: revokeResponse.status == 'success' ? 'Done' : 'Not removed',
+                        text: revokeResponse.message,
+                        icon: revokeResponse.status
+                    }).then(function () {
+                        finishDelete(response);
+                    });
+                },
+                error: function (xhr) {
+                    $.unblockUI();
+                    swal('Error', ajaxErrorMessage(xhr), 'error').then(function () {
+                        finishDelete(response);
+                    });
+                }
+            });
+        });
+    }
+
     // Delete application
     $("input.delete").on("click", function () {
-        if (!confirm("Are you sure you want to permanently delete this record and everything associated with it?"))
+        if (!confirm("Are you sure you want to delete this application?"))
             return;
 
         var url = $(this).attr('data-url');
@@ -133,25 +205,20 @@ jQuery(document).ready(function ($) {
             success: function (response) {
                 $.unblockUI();
                 swal({
-                                                                title: 'Success',
-                                                                text: response.message,
-                                                                icon: response.status
-                                                            }).then(
-                                                                (value) => {
-                if (response.status == 'success') {
-
-                    if(window.frameElement !== null) {
-                        // close the modal
-                        window.parent.closeModal();
+                    title: 'Success',
+                    text: response.message,
+                    icon: response.status
+                }).then(function () {
+                    if (response.status == 'success' && response.applicant_role_revocable) {
+                        offerRoleRevocation(response);
                     } else {
-                        window.location = response.redirect;
+                        finishDelete(response);
                     }
-                }
-            });
+                });
             },
             error: function (xhr) {
                 $.unblockUI();
-                swal("Error", xhr.responseJSON.message, "error");
+                swal("Error", ajaxErrorMessage(xhr), "error");
             }
         });
     });

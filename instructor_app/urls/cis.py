@@ -29,6 +29,7 @@ from ..views.ce.teacher_application import (
     send_approval_email,
     remove_recommendation as tapp_remove_recommendation,
     delete_record as delete_teacher_application,
+    revoke_applicant_role,
     reply_to_note as teacher_app_note_reply,
     remind_reviewer as remind_reviewer,
     update_reviewer_status as update_reviewer_status,
@@ -120,6 +121,10 @@ urlpatterns = [
         'teacher_application/delete/<uuid:record_id>',
         user_passes_test(user_has_cis_role, login_url='/')(delete_teacher_application),
         name='delete_teacher_application'),
+    path(
+        'teacher_application/revoke_applicant/<int:user_id>',
+        user_passes_test(user_has_cis_role, login_url='/')(revoke_applicant_role),
+        name='revoke_applicant_access'),
     path(
         'teacher_application/note/reply/<uuid:note_id>',
         teacher_app_note_reply,

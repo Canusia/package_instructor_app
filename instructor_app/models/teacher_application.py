@@ -2,6 +2,7 @@ import uuid, logging
 
 from django.db import models
 from django.urls import reverse_lazy
+from django.utils.html import escape
 from django.contrib.auth.models import Group
 from django.db.models import JSONField
 
@@ -156,7 +157,7 @@ class TeacherApplication(models.Model):
         ).values_list('course__id', flat=True)
         file_assoc = CourseAppRequirement.objects.filter(
             course__id__in=all_reqs
-        )
+        ).select_related('course').order_by('course__name', 'name')
 
         result = '<div class="list-group list-group-flush">'
         for file in file_assoc:
@@ -167,7 +168,11 @@ class TeacherApplication(models.Model):
 
             result += "<div class='d-flex w-100 justify-content-between "
             result += "'>"
-            result += f"<h5 class='mb-1'>{file.name}</h5>"
+            result += "<h5 class='mb-1'>"
+            result += escape(file.name)
+            if file.course:
+                result += f"<br><span class='badge badge-secondary'>{escape(file.course.name)}</span>"
+            result += "</h5>"
             result += "<small>"
             if str(file.id) in assoc_ids:
                 result += '<i class="fas fa-check" title="Successfully Uploaded"></i>&nbsp;'

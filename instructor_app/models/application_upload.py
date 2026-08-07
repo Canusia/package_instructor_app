@@ -3,6 +3,7 @@ import uuid, os
 from django.db import models
 from django.db.models import JSONField
 from django.dispatch import receiver
+from django.utils.html import escape
 
 from cis.models.course import CourseAppRequirement
 from cis.storage_backend import PrivateMediaStorage
@@ -35,14 +36,24 @@ class ApplicationUpload(models.Model):
 
         file_assoc = CourseAppRequirement.objects.filter(
             id__in=self.associated_with
-        )
+        ).select_related('course').order_by('course__name', 'name')
 
         if not file_assoc:
             return ''
 
-        return '<br>'.join([
-            file.name for file in file_assoc
-        ])
+        # Requirement names repeat across courses, so name the course too —
+        # otherwise two "Current Resume" rows are indistinguishable.
+        rows = []
+        for file in file_assoc:
+            row = escape(file.name)
+            if file.course:
+                row += (
+                    f" <span class='badge badge-secondary'>"
+                    f"{escape(file.course.name)}</span>"
+                )
+            rows.append(row)
+
+        return '<br>'.join(rows)
 
 
 @receiver(models.signals.post_delete, sender=ApplicationUpload)

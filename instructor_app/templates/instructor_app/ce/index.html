@@ -16,6 +16,7 @@
         </div>
 
         <div class="table-responsive">
+            {% csrf_token %}
             <div id="index-config"
                  data-api-url="{{ api_url }}"
                  data-reviewer-api-url="{{ reviewer_api_url }}"
@@ -35,6 +36,9 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" data-toggle="tab" href="#pending_verification">Pending Verification</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="tab" href="#no_applications">Applicants w/o Applications</a>
                     </li>
                 </ul>
 
@@ -249,6 +253,28 @@
                                             <th data-data="status" data-name="status">Status</th>
                                             <th data-data="account_verified" data-name="account_verified">Verified</th>
                                             <th data-data="verify_email_url" data-name="verify_email_url"><span class="sr-only">Actions</span></th>
+                                        </tr>
+                                    </thead>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane " id="no_applications">
+                        <div class="bg-white border border-top-0">
+                            <div class="col-12 pt-3 mb-3">
+                                <p class="alert alert-info">
+                                    These applicants have no applications on file &mdash; every one was
+                                    deleted. Removing applicant access also deletes their applicant
+                                    record. Their other roles and their user account are not affected.
+                                </p>
+                                <table id="records_no_applications" class="table table-striped responsive" style="width:100%">
+                                    <thead>
+                                        <tr>
+                                            <th data-data="user.last_name" data-name="user.last_name">Name</th>
+                                            <th data-data="user.email" data-name="user.email">Email</th>
+                                            <th data-data="status" data-name="status">Status</th>
+                                            <th data-data="revoke_url" data-name="user.last_name"><span class="sr-only">Actions</span></th>
                                         </tr>
                                     </thead>
                                 </table>
