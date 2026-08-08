@@ -32,7 +32,7 @@ def _get_applicants_from_ids(ids):
     applications = TeacherApplication.objects.filter(id__in=ids)
     for app in applications:
         try:
-            applicants.append(app.user.teacherapplicant)
+            applicants.append(app.user.inst_app_teacherapplicant)
         except TeacherApplicant.DoesNotExist:
             continue
     # Also try as TeacherApplicant IDs directly

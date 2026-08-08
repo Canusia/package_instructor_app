@@ -18,7 +18,7 @@ from cis.models.highschool import HighSchool
 from cis.models.term import AcademicYear
 from cis.models.course import Course, CourseAppRequirement, Campus
 from ..models.teacher_applicant import (
-    TeacherApplication, ApplicantRecommendation,
+    TeacherApplicant, TeacherApplication, ApplicantRecommendation,
     ApplicantSchoolCourse, ApplicationUpload,
     ApplicantCourseReviewer
 )
@@ -1350,14 +1350,14 @@ class TeacherApplicantVerifyEmailForm(MetaFormMixin, forms.Form):
             user = existing.first()
             # Check if they have an unverified applicant account - resend verification
             try:
-                applicant = user.teacherapplicant
+                applicant = user.inst_app_teacherapplicant
                 if not applicant.account_verified:
                     applicant.send_verification_request_email()
                     raise ValidationError(
                         _("A verification email has been resent to this address. Please check your email."),
                         code='invalid'
                     )
-            except CustomUser.teacherapplicant.RelatedObjectDoesNotExist:
+            except TeacherApplicant.DoesNotExist:
                 pass
 
             raise ValidationError(
