@@ -31,6 +31,17 @@
                 {% endif %}
 
                 {% if accepting_applications %}
+                {% if authenticated_start %}
+                <form action="" method="post">
+                    {% csrf_token %}
+                    <p>You are signed in as <strong>{{ request.user.email }}</strong>.
+                        Your application will be started against this account — there is
+                        nothing to verify and your password will not change.</p>
+                    <input type="submit" value="Start an application" name="submit_create_application"
+                        class="btn btn-primary" />
+                </form>
+
+                {% else %}
                 <form action="" method="post">
                     {% csrf_token %}
                     {{ form | crispy }}
@@ -39,6 +50,7 @@
                     <br>
                     <span>A verification email will be sent to the address you provide.</span>
                 </form>
+                {% endif %}
 
                 {% else %}
                 {{closed_message|safe}}

@@ -79,14 +79,17 @@ class CleanEmailExistingUserTests(TestCase):
 
         self.assertIn('already registered', str(ctx.exception))
 
-    def test_existing_user_with_verified_applicant_raises_already_registered(self):
+    def test_existing_user_with_verified_applicant_is_routed_to_login(self):
+        """Copy changed when existing users became able to apply — the point
+        here is still that the accessor resolves instead of raising
+        AttributeError."""
         user = make_user()
         TeacherApplicant.objects.create(user=user, account_verified=True)
 
         with self.assertRaises(ValidationError) as ctx:
             clean_email_for('dupe@example.com')
 
-        self.assertIn('already registered', str(ctx.exception))
+        self.assertIn('log in', str(ctx.exception))
 
     def test_existing_user_with_unverified_applicant_resends_verification(self):
         user = make_user()

@@ -46,6 +46,19 @@ class SettingForm(forms.Form):
         help_text='Turning this off will stop all emails, and prevent any new or in-progress applications from being submitted. Staff can override status internally on each application',
         widget=forms.Select(attrs={'class': 'col-md-4 col-sm-12'}))
 
+    allow_existing_users_to_apply = forms.ChoiceField(
+        choices=STATUS_OPTIONS,
+        label='Allow Existing Users to Apply',
+        help_text=(
+            'If Yes, someone who already has an account as a student, instructor '
+            'or high school admin can start an instructor application with that '
+            'email instead of being told the address is already registered. '
+            'Staff and faculty accounts are never eligible. Their existing '
+            'password and profile are left untouched — they verify the email, '
+            'then sign in to continue.'
+        ),
+        widget=forms.Select(attrs={'class': 'col-md-4 col-sm-12'}))
+
     allow_new_school = forms.ChoiceField(
         choices=STATUS_OPTIONS,
         label='Allow Applicants to Enter New School',
@@ -325,6 +338,7 @@ class SettingForm(forms.Form):
             'closed_message': self.cleaned_data.get('closed_message'),
             'is_accepting_new': self.cleaned_data.get('is_accepting_new'),
             'allow_new_school': self.cleaned_data.get('allow_new_school'),
+            'allow_existing_users_to_apply': self.cleaned_data.get('allow_existing_users_to_apply'),
             'recommendations_needed': self.cleaned_data.get('recommendations_needed'),
             
             'dashboard_blurb': self.cleaned_data.get('dashboard_blurb'),
@@ -922,6 +936,7 @@ class inst_app_language(SettingForm):
     def install(self):
         defaults = {
             'allow_new_school': 'No',
+            'allow_existing_users_to_apply': 'No',
             'dashboard_blurb': "Change this in Settings -> Instructor -> Application Language",
             'course_blurb': "Change this in Settings -> Instructor -> Application Language",
             'rec_req_blurb': "Change this in Settings -> Instructor -> Application Language",

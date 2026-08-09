@@ -25,6 +25,11 @@ from ..models.teacher_applicant import (
 
 from cis.models.note import TeacherApplicationNote
 
+from ..services.applicant_eligibility import (
+    existing_user_may_apply,
+    is_existing_applicant,
+)
+
 from cis.utils import get_foreign_key_references
 from cis.forms.utils import with_meta, MetaFormMixin
 
@@ -1360,11 +1365,38 @@ class TeacherApplicantVerifyEmailForm(MetaFormMixin, forms.Form):
             except TeacherApplicant.DoesNotExist:
                 pass
 
+            if is_existing_applicant(user):
+                # They already hold the applicant role and their account is
+                # verified — the way back in is login or a password reset,
+                # not a second application account.
+                raise ValidationError(
+                    _("You already have an applicant account for this email. "
+                      "Please log in, or reset your password if you have forgotten it."),
+                    code='invalid'
+                )
+
+            if self._existing_users_may_apply() and existing_user_may_apply(user):
+                # Eligible existing user (student / instructor / highschool_admin,
+                # or no roles at all). Hand the resolved user to save(), which
+                # attaches an applicant record instead of creating an account.
+                self.existing_user = user
+                return data
+
             raise ValidationError(
                 _("This email is already registered in the system. Please login or choose a different email."),
                 code='invalid'
             )
         return data
+
+    @staticmethod
+    def _existing_users_may_apply():
+        """Tenant toggle — off by default, so upgrading changes nothing."""
+        from ..settings.inst_app_language import inst_app_language
+
+        settings_dict = inst_app_language.from_db()
+        if not isinstance(settings_dict, dict):
+            return False
+        return settings_dict.get('allow_existing_users_to_apply', 'No') == 'Yes'
 
     def clean_confirm_email(self):
         email = self.data.get('email', '')
@@ -1379,6 +1411,10 @@ class TeacherApplicantVerifyEmailForm(MetaFormMixin, forms.Form):
         from ..models.teacher_applicant import TeacherApplicant
 
         data = self.cleaned_data
+
+        existing_user = getattr(self, 'existing_user', None)
+        if existing_user is not None:
+            return self._attach_to_existing_user(existing_user)
 
         try:
             user = CustomUser()
@@ -1402,10 +1438,45 @@ class TeacherApplicantVerifyEmailForm(MetaFormMixin, forms.Form):
             logger.error(f'Error creating teacher applicant: {e}')
             return None
 
+    def _attach_to_existing_user(self, user):
+        """
+        Give an already-registered user an applicant record.
+
+        Deliberately touches nothing on the CustomUser — not the name typed
+        into this form, and above all not the password. Saving the
+        TeacherApplicant is what grants the applicant role (see
+        TeacherApplicant.save), and every other role the user holds is left
+        alone.
+
+        The meta flag marks this applicant as belonging to a pre-existing
+        account, which is what routes them through login rather than the
+        password-setting signup tail.
+        """
+        import uuid as _uuid
+        from ..models.teacher_applicant import TeacherApplicant
+
+        try:
+            applicant = TeacherApplicant(
+                user=user,
+                verification_id=_uuid.uuid4(),
+                account_verified=False,
+                meta={'pre_existing_account': True},
+            )
+            applicant.save()
+            return applicant
+        except Exception as e:
+            logger.error(f'Error attaching applicant to existing user: {e}')
+            return None
+
 
 class TeacherApplicantVerifyAccountForm(forms.Form):
     """Simple form for the email verification confirmation page."""
     verification_id = forms.UUIDField(widget=forms.HiddenInput)
+
+
+# Rendered blank for a pre-existing account even when stored, so a blank
+# submission must not erase what is on file.
+SENSITIVE_PREFILL_EXEMPT = ('ssn', 'date_of_birth')
 
 
 class TeacherApplicantProfileForm(MetaFormMixin, forms.Form):
@@ -1689,6 +1760,16 @@ class TeacherApplicantProfileForm(MetaFormMixin, forms.Form):
         # Apply admin-configured field visibility/required state
         self._apply_field_visibility_and_required()
 
+        # An applicant sitting on a pre-existing account keeps the password it
+        # already has. Rendering these fields here would turn a public URL into
+        # a password reset for whatever roles that account holds.
+        self.pre_existing_account = bool(
+            applicant and (applicant.meta or {}).get('pre_existing_account')
+        )
+        if self.pre_existing_account:
+            for field in ['password', 'confirm_password']:
+                self.fields.pop(field, None)
+
         # Populate initial values from applicant instance
         if applicant:
             self._populate_initial_from_instance(applicant)
@@ -1791,6 +1872,12 @@ class TeacherApplicantProfileForm(MetaFormMixin, forms.Form):
             if not target or target == 'skip':
                 continue
 
+            # Never echo a stored SSN or date of birth back into this form —
+            # it is served on a public URL. They render blank and are preserved
+            # on save instead (see SENSITIVE_PREFILL_EXEMPT in save()).
+            if getattr(self, 'pre_existing_account', False) and name in SENSITIVE_PREFILL_EXEMPT:
+                continue
+
             path = getattr(field, 'storage_path', None) or name
 
             try:
@@ -1819,10 +1906,23 @@ class TeacherApplicantProfileForm(MetaFormMixin, forms.Form):
 
         user = applicant.user
 
+        # SSN and DOB render blank for a pre-existing account, so an untouched
+        # form would otherwise wipe them. Snapshot before the metadata save
+        # writes the blanks through, and restore anything left empty.
+        preserved = {}
+        if getattr(self, 'pre_existing_account', False):
+            for name in SENSITIVE_PREFILL_EXEMPT:
+                if not data.get(name):
+                    preserved[name] = getattr(user, name, None)
+
         # Save fields using metadata (only user target for this form)
         self._save_fields_to_models(user=user, commit=False)
 
-        # Handle password separately
+        for name, value in preserved.items():
+            setattr(user, name, value)
+
+        # Handle password separately. The field is absent for a pre-existing
+        # account, so this never fires there — their password is untouched.
         if data.get('password'):
             user.set_password(data['password'])
 

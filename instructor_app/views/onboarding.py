@@ -8,9 +8,12 @@ from datetime import date
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db import IntegrityError
+from django.conf import settings
 from django.contrib import messages, auth
+from django.urls import reverse
 
 from ..models.teacher_applicant import TeacherApplicant, TeacherApplication
+from ..services.applications import start_or_resume_application
 from ..forms.teacher_applicant import (
     TeacherApplicantVerifyEmailForm,
     TeacherApplicantVerifyAccountForm,
@@ -24,6 +27,23 @@ logger = logging.getLogger(__name__)
 def _get_app_settings():
     """Return inst_app_language settings dict."""
     return inst_app_language.from_db()
+
+
+def _login_url_for(applicant):
+    """Login page with a next= back to this applicant's complete-app step.
+
+    There is no named login route in MyCE — LOGIN_URL is a plain path.
+    """
+    destination = reverse(
+        'applicant_app:complete_signup',
+        kwargs={'applicant_id': applicant.id},
+    )
+    return f'{settings.LOGIN_URL}?next={destination}'
+
+
+def _is_pre_existing(applicant):
+    """True when this applicant record was attached to an account that already existed."""
+    return bool((applicant.meta or {}).get('pre_existing_account'))
 
 
 def _is_accepting_applications(app_settings=None):
@@ -56,6 +76,12 @@ def start_app(request):
                 'closed_message': closed_message,
                 'signup_intro': signup_intro,
             })
+
+    # An authenticated user has nothing to verify. Without this branch they
+    # would be mailed a link that redirects them to sign in while already
+    # signed in.
+    if request.user.is_authenticated:
+        return _start_app_for_authenticated_user(request, signup_intro)
 
     if request.method == 'POST':
         form = TeacherApplicantVerifyEmailForm(request.POST)
@@ -96,6 +122,56 @@ def start_app(request):
             'form': form,
             'accepting_applications': True,
             'signup_intro': signup_intro,
+        })
+
+
+def _start_app_for_authenticated_user(request, signup_intro):
+    """
+    Signed-in entry point: no email round-trip, no credentials touched.
+
+    POST starts (or resumes) the application; GET offers the button. An
+    ineligible signed-in user gets the same refusal an ineligible email does.
+    """
+    from ..services.applicant_eligibility import (
+        existing_user_may_apply,
+        is_existing_applicant,
+    )
+
+    user = request.user
+
+    if is_existing_applicant(user):
+        application = start_or_resume_application(user)
+        return redirect('applicant_app:manage_courses', application.id)
+
+    if not (
+        TeacherApplicantVerifyEmailForm._existing_users_may_apply()
+        and existing_user_may_apply(user)
+    ):
+        messages.add_message(
+            request,
+            messages.ERROR,
+            'This account is not eligible to submit an instructor application.',
+            'list-group-item-danger')
+        return redirect('index')
+
+    if request.method == 'POST':
+        TeacherApplicant.objects.get_or_create(
+            user=user,
+            defaults={
+                'account_verified': True,
+                'meta': {'pre_existing_account': True},
+            },
+        )
+        application = start_or_resume_application(user)
+        return redirect('applicant_app:manage_courses', application.id)
+
+    return render(
+        request,
+        'instructor_app/start-app.html',
+        {
+            'accepting_applications': True,
+            'signup_intro': signup_intro,
+            'authenticated_start': True,
         })
 
 
@@ -161,6 +237,18 @@ def verify_email(request, verification_id):
         applicant.verification_id = None
         applicant.save()
 
+        if _is_pre_existing(applicant):
+            # The account already exists and already has a password. Confirming
+            # the mailed link proves inbox control, which is enough to provision
+            # a new account but not enough to hand out a session on an account
+            # that already holds roles — so they sign in the normal way.
+            messages.add_message(
+                request,
+                messages.SUCCESS,
+                'Your email has been verified. Please sign in to continue your application.',
+                'list-group-item-success')
+            return redirect(_login_url_for(applicant))
+
         messages.add_message(
             request,
             messages.SUCCESS,
@@ -196,6 +284,21 @@ def complete_signup(request, applicant_id):
     """
     applicant = get_object_or_404(TeacherApplicant, pk=applicant_id)
 
+    # This URL is public and takes an applicant_id. For an applicant sitting on
+    # a pre-existing account the step edits a real staff/teacher/student record,
+    # so it is only served to that user, signed in as themselves.
+    if _is_pre_existing(applicant):
+        if not request.user.is_authenticated:
+            return redirect(_login_url_for(applicant))
+        if request.user.pk != applicant.user_id:
+            messages.add_message(
+                request,
+                messages.ERROR,
+                'You are signed in as a different user. Please sign in with the '
+                'account that started this application.',
+                'list-group-item-danger')
+            return redirect('index')
+
     # Set session key so address_suggestions view allows access
     request.session['record_key'] = str(applicant.pk)
 
@@ -222,18 +325,16 @@ def complete_signup(request, applicant_id):
             try:
                 form.save(applicant)
 
-                # Create a record in TeacherApplication to track progress through onboarding steps
-                teacher_application = TeacherApplication.objects.create(
-                    user=applicant.user,
-                    createdon=date.today(),
-                    misc_info={},
-                )
+                # Create the TeacherApplication that tracks progress through the
+                # onboarding steps — or resume a live one they already have.
+                teacher_application = start_or_resume_application(applicant.user)
 
-                auth.login(
-                    request,
-                    applicant.user,
-                    backend='cis.email_backend.EmailAuthBackend'
-                )
+                if not request.user.is_authenticated:
+                    auth.login(
+                        request,
+                        applicant.user,
+                        backend='cis.email_backend.EmailAuthBackend'
+                    )
 
                 messages.add_message(
                     request,

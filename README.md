@@ -22,6 +22,88 @@ The application step URLs (manage_courses, manage_recommendation, manage_ed_bg, 
 
 This is defined in `cis/utils.py`. The `highschool_admin` role was added to `user_has_applicant_role` to allow HS admins to access the application steps when starting or viewing applications from their portal.
 
+## Onboarding an Email That Already Exists
+
+By default the public start page dead-ends on any known email: *"This email is already
+registered in the system."* Setting `allow_existing_users_to_apply` to **Yes** lets some
+existing accounts start an application instead, attaching a `TeacherApplicant` to the
+account they already have.
+
+### Who is eligible
+
+| Existing account holds | Result |
+|---|---|
+| `student`, `instructor`, or `highschool_admin` | Allowed |
+| `ce` or `faculty`, and nothing else | Refused — staff and faculty may not submit an application |
+| An eligible role **and** `ce`/`faculty` | Allowed — allow-wins; a denied role only blocks when no eligible role is present |
+| No groups at all | Allowed — these should not exist, and the flow leaves them with the `applicant` role |
+| `district_admin`, `speaker`, `tech_center_staff` | Refused (default-deny) |
+| `applicant` already, verified | Refused — told to log in or reset their password |
+| `applicant` already, unverified | Verification email resent, as before |
+
+Eligibility lives in `services/applicant_eligibility.py` so the rule has one home.
+Creating the `TeacherApplicant` is what grants the `applicant` role (`TeacherApplicant.save()`);
+every other role the account holds is left in place.
+
+### Flow
+
+```mermaid
+flowchart TD
+    A[Start page] --> B{Signed in?}
+    B -->|yes| C{Eligible?}
+    C -->|yes| D[Start an application]
+    C -->|no| E[Refused]
+    B -->|no| F[Enter email]
+    F --> G{Email known?}
+    G -->|no| H[New account + verification]
+    G -->|yes| I{Eligible?}
+    I -->|no| E
+    I -->|yes| J[Applicant attached to account]
+    J --> K[Verification email]
+    K --> L[Sign in]
+    H --> M[Complete application step]
+    L --> M
+    D --> N[manage_courses]
+    M --> N
+```
+
+### What the existing-user path never touches
+
+The complete-application step sets a password and rewrites profile fields, and it is served
+from a public URL. For an account that already exists that would be an unauthenticated
+password reset affecting every role the account holds. So on this path:
+
+- The **password fields are removed** from the form. The account keeps its password;
+  forgotten passwords go through the normal reset flow.
+- The step **requires a real login** — the mailed link proves inbox control, which is
+  enough to provision a new account but not to hand out a session on one that already has
+  privileges. It also refuses a *different* signed-in user.
+- Profile fields are **prefilled** from the user record, except **SSN and date of birth**,
+  which render blank and are preserved on save rather than being echoed into a public form.
+
+An applicant flagged this way carries `meta['pre_existing_account'] = True`, which is what
+drives all three behaviors.
+
+### Prior applications
+
+`start_or_resume_application()` resumes the account's most recent application when it is
+still live, and starts a new one when the most recent is `Decision Made`, `Withdrawn`, or
+`Closed`. The main way a user ends up with a retained application and no applicant role is
+**Import as Instructor**, which deliberately keeps the application as the record of how
+they became an instructor — resuming that would hand a returning applicant an
+already-decided application.
+
+Deleting an application from the CE portal already removes the `TeacherApplication` and its
+children, and revoking applicant access deletes the `TeacherApplicant`; no orphan is left
+behind on that path.
+
+| File | Purpose |
+|------|---------|
+| `services/applicant_eligibility.py` | Who may apply — allowlist and allow-wins rule |
+| `services/applications.py` | Create or resume the `TeacherApplication` |
+| `forms/teacher_applicant.py` | `clean_email` branching, `_attach_to_existing_user`, password/SSN handling |
+| `views/onboarding.py` | Verification routing, signed-in shortcut, `complete_signup` guards |
+
 ## Directory Structure
 
 ```
@@ -98,6 +180,7 @@ Three setting groups are registered in `apps.py` and editable via the admin UI:
 | `is_accepting_new` | Master toggle (Yes/No) for new applications |
 | `recommendations_needed` | Number of recommendations required (0–3) |
 | `allow_new_school` | Allow applicants to add unlisted high schools |
+| `allow_existing_users_to_apply` | Let a student / instructor / HS admin who already has an account start an application with that email instead of being refused. Default **No**. See [Onboarding an Email That Already Exists](#onboarding-an-email-that-already-exists) |
 | `fc_review_status_label` | Custom label for the "Ready for Review" status |
 | `reviewer_role_config` | JSON dict of `{"RoleName": weight}` controlling which `CourseAdministrator` roles are auto-added as reviewers and in what order (lower weight = added first) when an application reaches the faculty review trigger status. Defaults to `{"Faculty": 1}`. |
 | `checklist_config` | JSON config for pre-approval checklist items |
