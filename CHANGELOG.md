@@ -3,6 +3,48 @@
 Releases are tagged `vYYYY.MAJOR.MINOR` on `Canusia/package_instructor_app` and consumed by
 each tenant through the `git+https://…@<tag>` pin in `webapp/requirements.txt`.
 
+## 2026.0.26
+
+### Changed
+
+* **The applicant course picker now offers every active course except those explicitly marked
+  unavailable.** Previously it required `meta['available_for_si'] == '1'` exactly, so any course
+  whose flag was never set was hidden. At EWU that took the dropdown from **2 of 101** active
+  courses to **101**. The rule is now: active, `available_for_si` not an explicit "No", and
+  campus matching or unset.
+* The campus dropdown is built from the catalogue — campuses holding at least one selectable
+  course — rather than from the courses left for the current applicant. A campus no longer
+  disappears once an applicant has added its last course.
+
+### Fixed
+
+* Courses whose `available_for_si` was written by the SIS importer are now honoured. The
+  importer (`cis/management/commands/import_courses.py`) stores the raw `isopen` value — a CSV
+  string such as `'0'`/`'false'`, or a bool — and `Course.add_or_update` replaces `meta`
+  wholesale, so a `'2'`-only rule would have treated SIS-closed courses as available. All "No"
+  spellings (`'2'`, `'0'`, `False`, `'false'`, `'False'`) now exclude.
+
+### Upgrade notes
+
+* **99 courses at EWU become selectable that have never been vetted for applicant use.** The
+  flag was never populated, and this release changes the default from deny to allow. Tell CE
+  staff before bumping the pin. Marking a course "No" now works as real suppression — before
+  this release effectively everything was suppressed.
+* **Newly selectable courses may have no faculty reviewer.** `TeacherApplication.add_reviewers`
+  assigns from the course's faculty coordinators and swallows failures, so a course without one
+  yields an application that reaches review status with zero reviewers and no notification.
+  Worth a per-tenant check of which newly selectable courses lack an active coordinator.
+* **The CE courses table will disagree with the applicant portal.** `cis/serializers/course.py`
+  renders anything that is not `'1'` as "Available for new Instructors: **No**", so ~99 courses
+  read "No" while applicants can select them. Aligning it is a separate `cis` change.
+* Ship this together with `future_sections` v2026.5.2 — that package governs what HS admins may
+  request a teacher for, and the two rules are meant to agree.
+
+### Known issues
+
+* The CE-side `EditTeacherAppCourseUploadForm` still labels requirements
+  `"{req.name} for {req.course.name}"`, a different convention from the applicant-facing form.
+
 ## 2026.0.25
 
 ### Added
