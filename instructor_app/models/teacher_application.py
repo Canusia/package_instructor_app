@@ -316,13 +316,22 @@ class TeacherApplication(models.Model):
 
 
         if new_status.lower() == 'submitted':
-            from ..settings.inst_app_language import inst_app_language
+            from ..settings.inst_app_language import (
+                inst_app_language, get_applicant_submitted_email,
+            )
 
             app_settings = inst_app_language.from_db()
-            if app_settings.get('applicant_submitted_email_active') == 'Yes':
+            # Guard against the signal-independent AddCourseForm.save() caller,
+            # which re-invokes this method with the application's *current*
+            # status (no transition) whenever staff add a course to an
+            # already-Submitted application. Only send when this call
+            # represents an actual transition into Submitted.
+            status_actually_changed = self.tracker.previous('status') != self.status
+            if app_settings.get('applicant_submitted_email_active') == 'Yes' and status_actually_changed:
+                applicant_subject, applicant_body = get_applicant_submitted_email()
                 send_notification(
-                    app_settings.get('applicant_submitted_email_subject'),
-                    app_settings.get('applicant_submitted_email'),
+                    applicant_subject,
+                    applicant_body,
                     {
                         'teacher_first_name': self.user.first_name,
                         'teacher_last_name': self.user.last_name,

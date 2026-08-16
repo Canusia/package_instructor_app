@@ -43,6 +43,8 @@ APPLICANT_SUBMITTED_EMAIL_DEFAULT = (
     'our office if anything needs to be corrected.</p>'
 )
 
+APPLICANT_SUBMITTED_EMAIL_SUBJECT_DEFAULT = 'Your application has been submitted'
+
 
 def get_app_submitted_message():
     """Return the configured post-submission message, or the built-in default.
@@ -52,6 +54,24 @@ def get_app_submitted_message():
     """
     value = (inst_app_language.from_db().get('app_submitted_message') or '').strip()
     return value or APP_SUBMITTED_MESSAGE_DEFAULT
+
+
+def get_applicant_submitted_email():
+    """Return (subject, body) for the applicant submission confirmation email.
+
+    `install()` seeds these keys, but that never runs against an
+    already-configured tenant, so on every upgraded tenant the keys are
+    absent until an admin saves the settings form. Both missing-key and
+    blank-value fall back to the built-in defaults so the preview link and
+    the send never operate on an empty template.
+    """
+    email_settings = inst_app_language.from_db()
+    subject = (email_settings.get('applicant_submitted_email_subject') or '').strip()
+    body = (email_settings.get('applicant_submitted_email') or '').strip()
+    return (
+        subject or APPLICANT_SUBMITTED_EMAIL_SUBJECT_DEFAULT,
+        body or APPLICANT_SUBMITTED_EMAIL_DEFAULT,
+    )
 
 
 class SettingForm(forms.Form):
@@ -538,8 +558,7 @@ class inst_app_language(SettingForm):
             email = email_settings.get('rec_received_email_message')
             subject = email_settings.get('course_reviewed_email_subject')
         if field_name == 'applicant_submitted_email':
-            email = email_settings.get('applicant_submitted_email')
-            subject = email_settings.get('applicant_submitted_email_subject')
+            subject, email = get_applicant_submitted_email()
 
         email_template = Template(email)
         context = Context({
@@ -1010,7 +1029,7 @@ class inst_app_language(SettingForm):
             'app_not_editable_message': 'Your application is no longer editable.',
             'app_submitted_message': APP_SUBMITTED_MESSAGE_DEFAULT,
             'applicant_submitted_email_active': 'No',
-            'applicant_submitted_email_subject': 'Your application has been submitted',
+            'applicant_submitted_email_subject': APPLICANT_SUBMITTED_EMAIL_SUBJECT_DEFAULT,
             'applicant_submitted_email': APPLICANT_SUBMITTED_EMAIL_DEFAULT,
             'ed_bg_page_header': 'Change this in settings',
             'signup_intro': 'Change this in Settings -> Instructor -> Application Language',
