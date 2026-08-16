@@ -475,10 +475,17 @@ class AppUploadForm(forms.ModelForm):
 
         course_reqs = CourseAppRequirement.objects.filter(
             course__id__in=interested_courses
-        )
+        ).select_related('course').order_by('course__title', 'course__name', 'name')
+
         req_list = []
         for req in course_reqs:
-            req_list.append((str(req.id), f'{req.name}'))
+            if req.course:
+                # Applicants may apply to several courses that each require a
+                # "Transcript"; without the course the checkboxes are identical.
+                label = f'{req.course.title} {req.course.name} — {req.name}'
+            else:
+                label = f'{req.name}'
+            req_list.append((str(req.id), label))
         self.fields['associated_with'].choices = req_list
 
     def save(self, commit=False):
