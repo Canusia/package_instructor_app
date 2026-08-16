@@ -16,7 +16,7 @@ from django_recaptcha.fields import ReCaptchaField
 from cis.models.customuser import CustomUser
 from cis.models.highschool import HighSchool
 from cis.models.term import AcademicYear
-from cis.models.course import Course, CourseAppRequirement, Campus
+from cis.models.course import Course, CourseAppRequirement
 from ..models.teacher_applicant import (
     TeacherApplicant, TeacherApplication, ApplicantRecommendation,
     ApplicantSchoolCourse, ApplicationUpload,
@@ -1222,18 +1222,15 @@ class SchoolCourseForm(forms.Form):
         self.fields['course'].queryset = available_courses
         self.fields['course'].label_from_instance = lambda obj: f"{obj}: {obj.title}"
 
-        # Campus choices: only campuses that have at least one available course.
-        # The campus dropdown is a client-side filter over the course list — see
-        # manage_course.html. Courses with no campus always remain visible.
-        campus_ids = (
-            available_courses
-            .exclude(campus__isnull=True)
-            .values_list('campus', flat=True)
-            .distinct()
-        )
-        campuses = Campus.objects.filter(id__in=campus_ids).order_by('name')
+        # Campus choices: campuses holding at least one selectable course,
+        # independent of what this applicant has already added — see
+        # services/course_availability. The dropdown is a client-side filter
+        # over the rendered course list (manage_course.html); courses with no
+        # campus stay visible under every selection.
+        from ..services.course_availability import campuses_with_selectable_courses
         self.fields['campus'].choices = (
-            [('', 'All Campuses')] + [(str(c.id), c.name) for c in campuses]
+            [('', 'All Campuses')]
+            + [(str(c.id), c.name) for c in campuses_with_selectable_courses()]
         )
 
         # course_id -> campus_id map for the client-side filter ('' == no campus)

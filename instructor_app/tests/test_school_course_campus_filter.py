@@ -50,6 +50,16 @@ class SchoolCourseCampusFilterTests(TestCase):
         self.course_b = _course('102', campus=self.campus_b)
         self.course_null = _course('103', campus=None)
 
+        from cis.models.settings import Setting
+        Setting.objects.update_or_create(
+            key='tapp_email',
+            defaults={'value': {
+                'new_applicant_email_subject': 'Started',
+                'new_applicant_email': '<p>Welcome</p>',
+                'internal_notify_on': [],
+                'course_selected_email_recipient': '',
+            }})
+
     def _form(self):
         return SchoolCourseForm(teacher_application=self.app, initial={'id': '-1'})
 
@@ -61,13 +71,24 @@ class SchoolCourseCampusFilterTests(TestCase):
     def test_campus_field_is_optional(self):
         self.assertFalse(self._form().fields['campus'].required)
 
-    def test_choices_only_include_campuses_with_available_courses(self):
+    def test_choices_only_include_campuses_with_selectable_courses(self):
         values = [c[0] for c in self._form().fields['campus'].choices]
         self.assertIn('', values)                          # "All Campuses"
         self.assertIn(str(self.campus_a.id), values)
         self.assertIn(str(self.campus_b.id), values)
-        # A campus with no available course must not appear.
+        # A campus with no course at all must not appear.
         self.assertNotIn(str(self.empty_campus.id), values)
+
+    def test_campus_remains_listed_after_applicant_adds_its_only_course(self):
+        """The list describes the catalogue, not the applicant's progress."""
+        from instructor_app.instructor_app.models.teacher_applicant import (
+            ApplicantSchoolCourse,
+        )
+        self.app.save()
+        ApplicantSchoolCourse.objects.create(
+            teacherapplication=self.app, course=self.course_a, misc_info={})
+        values = [c[0] for c in self._form().fields['campus'].choices]
+        self.assertIn(str(self.campus_a.id), values)
 
     def test_course_campus_map_reflects_campus_or_empty(self):
         m = self._form().course_campus_map
