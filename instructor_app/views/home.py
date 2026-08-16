@@ -29,7 +29,7 @@ from ..forms.teacher_applicant import (
     AppUploadForm
 )
 
-from ..settings.inst_app_language import inst_app_language
+from ..settings.inst_app_language import inst_app_language, get_app_submitted_message
 from ..utils import get_teacher_application
 
 from cis.page_messages import get_page_messages
@@ -207,6 +207,7 @@ def review_application(request, record_id):
             'recommendations_needed': int(app_settings.get('recommendations_needed') or 0),
             'certification_text': app_settings.get('certification_text', ''),
             'app_not_editable_message': app_settings.get('app_not_editable_message', '') if not teacher_application.can_edit() else '',
+            'app_submitted_message': get_app_submitted_message(),
         }
     )
 

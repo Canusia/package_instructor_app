@@ -30,6 +30,22 @@ FACULTY_REVIEW_TEACHER_INFO_DEFAULT = (
     '</div>'
 )
 
+APP_SUBMITTED_MESSAGE_DEFAULT = (
+    'Your application has been submitted. '
+    'Please contact our office to make any edits.'
+)
+
+
+def get_app_submitted_message():
+    """Return the configured post-submission message, or the built-in default.
+
+    Tenants that predate this setting have no such key, and an admin may clear
+    the field; both cases fall back so the review page is never blank.
+    """
+    value = (inst_app_language.from_db().get('app_submitted_message') or '').strip()
+    return value or APP_SUBMITTED_MESSAGE_DEFAULT
+
+
 class SettingForm(forms.Form):
     class Media:
         js = ('js/checklist_settings.js',)
@@ -115,6 +131,13 @@ class SettingForm(forms.Form):
         widget=forms.Textarea,
         help_text='Displayed on the review page when the application is no longer editable by the applicant.',
         label="Application Not Editable Message")
+
+    app_submitted_message = forms.CharField(
+        max_length=None,
+        required=False,
+        widget=forms.Textarea,
+        help_text='Displayed on the review page after the applicant has submitted their application.',
+        label="Application Submitted Message")
 
     # number of recommendations needed 0-3
     recommendations_needed = forms.IntegerField(
@@ -354,6 +377,7 @@ class SettingForm(forms.Form):
             'file_upload_page_header': self.cleaned_data.get('file_upload_page_header'),
             'submit_page_header': self.cleaned_data.get('submit_page_header'),
             'app_not_editable_message': self.cleaned_data.get('app_not_editable_message'),
+            'app_submitted_message': self.cleaned_data.get('app_submitted_message'),
             'ed_bg_page_header': self.cleaned_data.get('ed_bg_page_header'),
             'rec_submit_page_pre_form': self.cleaned_data.get('rec_submit_page_pre_form'),
             'signup_intro': self.cleaned_data.get('signup_intro'),
@@ -948,6 +972,7 @@ class inst_app_language(SettingForm):
             'rec_submit_page_header': "Change this in Settings -> Instructor -> Application Language",
             'rec_submit_page_pre_form': "Change this in Settings -> Instructor -> Application Language",
             'app_not_editable_message': 'Your application is no longer editable.',
+            'app_submitted_message': APP_SUBMITTED_MESSAGE_DEFAULT,
             'ed_bg_page_header': 'Change this in settings',
             'signup_intro': 'Change this in Settings -> Instructor -> Application Language',
             'complete_signup_intro': '',

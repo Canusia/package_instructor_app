@@ -232,7 +232,7 @@
                         <input type="submit" class="btn btn-primary btn-sm" value="Submit Application">
                     </form>
                     {% else %}
-                    <p class="alert alert-info">Your application has been submitted. Please contact our office to make any edits.</p>
+                    <p class="alert alert-info">{{ app_submitted_message|safe }}</p>
                     {% endif %}
 
                     {% else %}
