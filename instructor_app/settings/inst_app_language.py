@@ -35,6 +35,14 @@ APP_SUBMITTED_MESSAGE_DEFAULT = (
     'Please contact our office to make any edits.'
 )
 
+APPLICANT_SUBMITTED_EMAIL_DEFAULT = (
+    '<p>Dear {{teacher_first_name}},</p>'
+    '<p>Thank you — your instructor application for {{courses}} has been '
+    'submitted and is now with our office for review.</p>'
+    '<p>You will hear from us as your application progresses. Please contact '
+    'our office if anything needs to be corrected.</p>'
+)
+
 
 def get_app_submitted_message():
     """Return the configured post-submission message, or the built-in default.
@@ -138,6 +146,26 @@ class SettingForm(forms.Form):
         widget=forms.Textarea,
         help_text='Displayed on the review page after the applicant has submitted their application.',
         label="Application Submitted Message")
+
+    applicant_submitted_email_active = forms.ChoiceField(
+        choices=STATUS_OPTIONS,
+        required=False,
+        label='Send Submission Confirmation to Applicant',
+        help_text='If Yes, the applicant receives a confirmation email when their application is submitted. This is separate from the internal staff notification configured under Instructor Application Email(s).',
+        widget=forms.Select(attrs={'class': 'col-md-4 col-sm-12'}))
+
+    applicant_submitted_email_subject = forms.CharField(
+        max_length=None,
+        required=False,
+        help_text='',
+        label="Applicant Submission Confirmation Subject")
+
+    applicant_submitted_email = forms.CharField(
+        max_length=None,
+        required=False,
+        widget=forms.Textarea,
+        help_text='Customize with {{teacher_first_name}}, {{teacher_last_name}}, {{teacher_email}}, {{highschool}}, {{courses}}, {{application_status}}. <a href="#" class="float-right" onClick="do_bulk_action(\'inst_app_language\', \'applicant_submitted_email\')" >See Preview</a>',
+        label="Applicant Submission Confirmation Message")
 
     # number of recommendations needed 0-3
     recommendations_needed = forms.IntegerField(
@@ -378,6 +406,9 @@ class SettingForm(forms.Form):
             'submit_page_header': self.cleaned_data.get('submit_page_header'),
             'app_not_editable_message': self.cleaned_data.get('app_not_editable_message'),
             'app_submitted_message': self.cleaned_data.get('app_submitted_message'),
+            'applicant_submitted_email_active': self.cleaned_data.get('applicant_submitted_email_active'),
+            'applicant_submitted_email_subject': self.cleaned_data.get('applicant_submitted_email_subject'),
+            'applicant_submitted_email': self.cleaned_data.get('applicant_submitted_email'),
             'ed_bg_page_header': self.cleaned_data.get('ed_bg_page_header'),
             'rec_submit_page_pre_form': self.cleaned_data.get('rec_submit_page_pre_form'),
             'signup_intro': self.cleaned_data.get('signup_intro'),
@@ -506,7 +537,10 @@ class inst_app_language(SettingForm):
         if field_name == 'rec_received_email_message':
             email = email_settings.get('rec_received_email_message')
             subject = email_settings.get('course_reviewed_email_subject')
-        
+        if field_name == 'applicant_submitted_email':
+            email = email_settings.get('applicant_submitted_email')
+            subject = email_settings.get('applicant_submitted_email_subject')
+
         email_template = Template(email)
         context = Context({
             'recommender_name': request.user.first_name,
@@ -517,6 +551,8 @@ class inst_app_language(SettingForm):
             'recommendation_link': 'https://custom-url',
             'course': 'Course',
             'course_titles': 'Course 1 and Course 2',
+            'courses': 'Course 1 and Course 2',
+            'application_status': 'Submitted',
         })
 
         text_body = email_template.render(context)
@@ -973,6 +1009,9 @@ class inst_app_language(SettingForm):
             'rec_submit_page_pre_form': "Change this in Settings -> Instructor -> Application Language",
             'app_not_editable_message': 'Your application is no longer editable.',
             'app_submitted_message': APP_SUBMITTED_MESSAGE_DEFAULT,
+            'applicant_submitted_email_active': 'No',
+            'applicant_submitted_email_subject': 'Your application has been submitted',
+            'applicant_submitted_email': APPLICANT_SUBMITTED_EMAIL_DEFAULT,
             'ed_bg_page_header': 'Change this in settings',
             'signup_intro': 'Change this in Settings -> Instructor -> Application Language',
             'complete_signup_intro': '',
