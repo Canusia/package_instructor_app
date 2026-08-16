@@ -27,7 +27,7 @@ def _course(catalog, campus=None, cohort=None, si=True):
         name=f'ENGL& {catalog}', status='active', title=f'Course {catalog}',
         catalog_number=catalog, campus=campus,
         cohort=cohort or _cohort(name=catalog, designator=f'C{catalog}&'),
-        meta={'available_for_si': '1' if si else '0'},
+        meta={'available_for_si': '1' if si else '2'},
     )
 
 

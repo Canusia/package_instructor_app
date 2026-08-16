@@ -1203,11 +1203,11 @@ class SchoolCourseForm(forms.Form):
                                'new_school_name', 'principal_name', 'principal_email']:
                 self.fields.pop(field_name, None)
 
-        # Available courses: active, open for application, not already applied for
-        available_courses = Course.objects.filter(
-            status__iexact='active',
-            meta__available_for_si='1'
-        ).order_by('name')
+        # Available courses: active, not refused to new instructors, not already
+        # applied for. The availability rule lives in one place — see
+        # services/course_availability.
+        from ..services.course_availability import selectable_courses
+        available_courses = selectable_courses().order_by('name')
 
         try:
             self.fields['course_subsection'].initial = 'Select Course'
