@@ -184,8 +184,62 @@ Three setting groups are registered in `apps.py` and editable via the admin UI:
 | `fc_review_status_label` | Custom label for the "Ready for Review" status |
 | `reviewer_role_config` | JSON dict of `{"RoleName": weight}` controlling which `CourseAdministrator` roles are auto-added as reviewers and in what order (lower weight = added first) when an application reaches the faculty review trigger status. Defaults to `{"Faculty": 1}`. |
 | `checklist_config` | JSON config for pre-approval checklist items |
+| `app_submitted_message` | Text shown on the review page once the application has been submitted and is no longer editable. Falls back to the built-in wording when unset. |
+| `applicant_submitted_email_active` | Yes/No — send the applicant a confirmation email when their application is submitted. Default **No**. See [Applicant Submission Confirmation](#applicant-submission-confirmation) |
+| `applicant_submitted_email_subject` | Subject line for that confirmation |
+| `applicant_submitted_email` | Body for that confirmation. Supports `{{teacher_first_name}}`, `{{teacher_last_name}}`, `{{teacher_email}}`, `{{highschool}}`, `{{courses}}`, `{{application_status}}` |
 
 Also configures page introductions, form field labels, and help text for every applicant-facing screen.
+
+## Applicant Submission Confirmation
+
+Separate from the *internal* "application submitted" notice configured under
+`teacher_application_email` (key `tapp_email`), this is an email to the **applicant**,
+confirming their own submission. It is off by default — switching it on is a per-tenant
+decision, since it emails real applicants.
+
+Turn it on under **Settings → Instructor → Instructor Application Page** by setting
+*Send Submission Confirmation to Applicant* to **Yes** and filling in the subject and body.
+
+### When it sends
+
+The send lives in `TeacherApplication.notify_status_change()`, in the `submitted` branch,
+and fires on **every genuine transition into `Submitted`** — the applicant's own submit, and
+a staff move from any other status back to `Submitted`.
+
+It is guarded by `self.tracker.previous('status') != self.status`, which matters because
+`notify_status_change` has a second, signal-independent caller: `AddCourseForm.save()`
+re-invokes it with the application's *current* status whenever staff add a course. Without
+the guard, adding a course to an already-submitted application would send the applicant a
+duplicate confirmation. Do not remove the guard; `test_add_course_form_save_queues_no_duplicate_applicant_email`
+and `test_resends_when_status_transitions_into_submitted_again` pin both halves of the
+behaviour.
+
+The send is deliberately placed **above** the internal branch's
+`if 'app_submitted' not in notify_on: return` gate, so turning off internal staff
+notifications does not silently suppress the applicant's email.
+
+### Fallbacks
+
+Subject and body resolve through `get_applicant_submitted_email()`, which falls back to
+`APPLICANT_SUBMITTED_EMAIL_SUBJECT_DEFAULT` / `APPLICANT_SUBMITTED_EMAIL_DEFAULT` when the
+key is missing or blank — so an upgraded tenant that has not yet saved the settings form
+still previews and sends a sensible email rather than 500ing or silently sending nothing.
+`app_submitted_message` resolves the same way through `get_app_submitted_message()`.
+
+## Material Upload Requirements ("For" checkboxes)
+
+`AppUploadForm` lists every `CourseAppRequirement` belonging to the courses the applicant
+selected. Two courses can each define a requirement called "Transcript", so the labels are
+prefixed with their course — `"{course.title} {course.name} — {req.name}"` — and ordered by
+course, making identically-named requirements distinguishable.
+
+Choice **values** remain the requirement UUID (`str(req.id)`), so existing
+`ApplicationUpload.associated_with` rows keep resolving; `test_values_are_still_requirement_ids`
+pins this. A requirement with no course keeps its bare name.
+
+Note the CE-side `EditTeacherAppCourseUploadForm` still uses its own older convention
+(`"{req.name} for {req.course.name}"`); aligning the two is outstanding.
 
 ### `teacher_application_email` — Email Templates
 Configurable subject lines and body templates for: new applicant, course selected, submitted, decision made, faculty review ready, course reviewed, approval letter, and internal notifications. Templates support Django template syntax with context variables like `{{ teacher_first_name }}`, `{{ approved_courses_only_as_a_list }}`, etc.
