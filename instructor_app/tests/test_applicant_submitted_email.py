@@ -102,6 +102,21 @@ class ApplicantSubmittedEmailTests(TestCase):
         self.application.save()
         self.assertEqual(self.applicant_messages(), [])
 
+    def test_resends_when_status_transitions_into_submitted_again(self):
+        """A genuine re-transition into Submitted (e.g. staff move it back to
+        Under Review and forward again) must queue a second confirmation
+        email. Do not "fix" this into a send-once — resending on every real
+        transition into Submitted is the intended behaviour.
+        """
+        self.submit()
+        self.assertEqual(len(self.applicant_messages()), 1)
+
+        self.application.status = 'Under Review'
+        self.application.save()
+
+        self.submit()
+        self.assertEqual(len(self.applicant_messages()), 2)
+
 
 class AddCourseNoDuplicateApplicantEmailTests(TestCase):
     """Finding 1: AddCourseForm.save() re-invokes notify_status_change() with
