@@ -301,7 +301,7 @@ class TeacherApplication(models.Model):
             context_dict = {
                 'teacher_first_name': self.user.first_name,
                 'teacher_last_name': self.user.last_name,
-                'highschool': self.highschool.name,
+                'highschool': self.highschool.name if self.highschool else '',
                 'teacher_email': self.user.email,
                 'courses': self.courses,
                 'application_status': self.status,
@@ -363,7 +363,7 @@ class TeacherApplication(models.Model):
             context_dict = {
                 'teacher_first_name': self.user.first_name,
                 'teacher_last_name': self.user.last_name,
-                'highschool': self.highschool.name,
+                'highschool': self.highschool.name if self.highschool else '',
                 'teacher_email': self.user.email,
                 'courses': self.courses,
                 'application_status': self.status,
