@@ -316,6 +316,24 @@ class TeacherApplication(models.Model):
 
 
         if new_status.lower() == 'submitted':
+            from ..settings.inst_app_language import inst_app_language
+
+            app_settings = inst_app_language.from_db()
+            if app_settings.get('applicant_submitted_email_active') == 'Yes':
+                send_notification(
+                    app_settings.get('applicant_submitted_email_subject'),
+                    app_settings.get('applicant_submitted_email'),
+                    {
+                        'teacher_first_name': self.user.first_name,
+                        'teacher_last_name': self.user.last_name,
+                        'teacher_email': self.user.email,
+                        'highschool': self.highschool.name if self.highschool else '',
+                        'courses': self.courses,
+                        'application_status': self.status,
+                    },
+                    [self.user.email]
+                )
+
             from ..settings.teacher_application_email import teacher_application_email as tapp_s
 
             email_settings = tapp_s.from_db()
