@@ -9,8 +9,12 @@ from django.db.models import Q
 
 from cis.models.course import Campus, Course
 
-# cis.utils.YES_NO_SELECT_OPTIONS: '' = Select, '1' = Yes, '2' = No.
-AVAILABLE_FOR_SI_NO = '2'
+# CE forms write cis.utils.YES_NO_SELECT_OPTIONS ('' / '1' / '2'). The SIS
+# importer writes cis/management/commands/import_courses.py's raw `isopen`
+# value instead — a CSV string or a bool — and Course.add_or_update replaces
+# meta wholesale, so both vocabularies occur in the wild. Treat every "no"
+# spelling as No; anything unset stays available.
+AVAILABLE_FOR_SI_NO = ('2', '0', False, 'false', 'False')
 
 
 def _not_explicitly_unavailable():
@@ -18,12 +22,15 @@ def _not_explicitly_unavailable():
 
     The isnull clause is load-bearing and must not be "simplified" away:
     `available_for_si` is absent on most rows, so a bare
-    `exclude(meta__available_for_si='2')` compares against SQL NULL and
-    silently drops those rows instead of keeping them. Measured on live data
-    that exclusion returned 11 of 101 active courses.
+    `exclude(meta__available_for_si__in=AVAILABLE_FOR_SI_NO)` compares
+    against SQL NULL and silently drops those rows instead of keeping them.
+    Measured on live data that exclusion returned 11 of 101 active courses.
+    `~Q(...__in=...)` gets the same negation/NULL-guard treatment from Django
+    as `~Q(...=...)`, so this NULL rescue still applies — confirmed against
+    live data (101 active courses both before and after this rule).
     """
     return (
-        ~Q(meta__available_for_si=AVAILABLE_FOR_SI_NO)
+        ~Q(meta__available_for_si__in=AVAILABLE_FOR_SI_NO)
         | Q(meta__available_for_si__isnull=True)
     )
 

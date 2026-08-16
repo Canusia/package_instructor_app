@@ -51,6 +51,23 @@ class SelectableCourseRuleTests(TestCase):
         course = _course('105', meta='2')
         self.assertNotIn(course, selectable_courses())
 
+    def test_excludes_sis_import_string_zero(self):
+        """import_courses.py's raw `isopen` value can be a CSV '0'."""
+        course = _course('107', meta='0')
+        self.assertNotIn(course, selectable_courses())
+
+    def test_excludes_sis_import_string_false(self):
+        course = _course('108', meta='false')
+        self.assertNotIn(course, selectable_courses())
+
+    def test_excludes_sis_import_string_False(self):
+        course = _course('109', meta='False')
+        self.assertNotIn(course, selectable_courses())
+
+    def test_excludes_sis_import_boolean_false(self):
+        course = _course('110', meta=False)
+        self.assertNotIn(course, selectable_courses())
+
     def test_excludes_inactive_course(self):
         course = _course('106', status='inactive')
         self.assertNotIn(course, selectable_courses())
