@@ -170,6 +170,55 @@ instructor_app/
 └── apps.py                           # App config + settings registration
 ```
 
+## Shared table configs (`get_table_config`)
+
+`instructor_app/services/table_configs.py` resolves per-tenant DataTable
+config services through `settings.TABLE_CONFIGS_APP`, the same seam `cis` uses:
+
+```python
+from instructor_app.services.table_configs import get_table_config, available
+
+cfg = get_table_config('faculty_coords_table').build_config(
+    variant='faculty_coords_index', api_url=...)
+```
+
+### Check this before installing this version
+
+**Using this seam makes the host a hard dependency.** A tenant upgrading to a
+release that calls `get_table_config(...)` must provide:
+
+1. `settings.TABLE_CONFIGS_APP`, naming an installed app (on MyCE tenants this
+   is `myce_tenant_configs`); and
+2. that app's `services/<name>_table.py` module for every config this package
+   requests, exposing `build_config(...)`.
+
+Neither is optional once a code path calls it. Without (1) the call raises
+`ImproperlyConfigured`; without (2) it raises `ModuleNotFoundError`. Both
+surface at the point of use — i.e. when a CE user opens the page — not at
+startup, so a missing service will not be caught by a deploy that merely boots.
+
+Verify on the target tenant before upgrading:
+
+```bash
+python manage.py shell -c "
+from instructor_app.services.table_configs import available
+print(available('faculty_coords_table'))
+"
+```
+
+Use `available(...)` in any code path that must keep working on a tenant that
+has not been migrated yet; it returns `False` instead of raising, so the caller
+can fall back to its own markup.
+
+### Why this is a MAJOR release
+
+Introducing a new host requirement is a breaking change for tenants that do not
+already ship `TABLE_CONFIGS_APP` and the requested service modules. Release the
+version that first *calls* this seam as a major version bump (CalVer
+`YYYY.MAJOR.MINOR` — so `2026.0.x` becomes `2026.1.0`), and bump the metadata
+in both `setup.py` and `setup.cfg` in the same commit you tag, or pip will treat
+the upgrade as already satisfied and silently keep the old code.
+
 ## Configuration (Admin Settings)
 
 Three setting groups are registered in `apps.py` and editable via the admin UI:
