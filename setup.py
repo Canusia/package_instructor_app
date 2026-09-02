@@ -7,7 +7,7 @@ with open(os.path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='instructor-app',
-    version='2026.0.26',
+    version='2026.0.27',
     description='Django app for instructor application management in MyCE',
     long_description=long_description,
     long_description_content_type='text/markdown',
