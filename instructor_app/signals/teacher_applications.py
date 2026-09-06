@@ -76,7 +76,21 @@ def create_new_recommendation(sender, instance, created, **kwargs):
     """
     if created:
         email_settings = inst_app_page_settings.from_db()
-        email_template = Template(email_settings['rec_received_email_message'])
+
+        # from_db() returns {} when the setting was never registered -- a
+        # fresh environment, or a tenant stood up before register_settings
+        # runs. This is a post_save receiver, so the KeyError escaped the
+        # caller's save() after the row had been written (Canusia/ewu#74).
+        # An unconfigured template means no notification -- logged, not a
+        # blank email.
+        message = email_settings.get('rec_received_email_message')
+        if not message:
+            logger.warning(
+                'inst_app_language.rec_received_email_message is not configured; '
+                'skipping the email for %s', instance.teacher_application_id)
+            return
+
+        email_template = Template(message)
 
         context = Context({
             'teacher_first_name': instance.teacher_application.user.first_name,
@@ -187,7 +201,21 @@ def create_new_application(sender, instance, created, **kwargs):
     """
     if created:
         email_settings = tapp_settings.from_db()
-        email_template = Template(email_settings['new_applicant_email'])
+
+        # from_db() returns {} when the setting was never registered -- a
+        # fresh environment, or a tenant stood up before register_settings
+        # runs. This is a post_save receiver, so the KeyError escaped the
+        # caller's save() after the row had been written (Canusia/ewu#74).
+        # An unconfigured template means no notification -- logged, not a
+        # blank email.
+        message = email_settings.get('new_applicant_email')
+        if not message:
+            logger.warning(
+                'teacher_application_email.new_applicant_email is not configured; '
+                'skipping the email for %s', instance.id)
+            return
+
+        email_template = Template(message)
 
         context = Context({
             'first_name': instance.user.first_name,
@@ -225,7 +253,20 @@ def selected_new_course(sender, instance, created, **kwargs):
         notify_on = email_settings.get('internal_notify_on', [])
         if 'course_added' not in notify_on:
             return
-        email_template = Template(email_settings['course_selected_email'])
+        # from_db() returns {} when the setting was never registered -- a
+        # fresh environment, or a tenant stood up before register_settings
+        # runs. This is a post_save receiver, so the KeyError escaped the
+        # caller's save() after the row had been written (Canusia/ewu#74).
+        # An unconfigured template means no notification -- logged, not a
+        # blank email.
+        message = email_settings.get('course_selected_email')
+        if not message:
+            logger.warning(
+                'teacher_application_email.course_selected_email is not configured; '
+                'skipping the email for %s', instance.id)
+            return
+
+        email_template = Template(message)
 
         context = Context({
             'teacher_first_name': instance.teacherapplication.user.first_name,
@@ -290,7 +331,20 @@ def teacher_application_note_added(sender, instance, created, **kwargs):
         if email_settings.get('is_active', 'No') == 'No':
             return
 
-        email_template = Template(email_settings['teacherapplication_note_to_instructor_email'])
+        # from_db() returns {} when the setting was never registered -- a
+        # fresh environment, or a tenant stood up before register_settings
+        # runs. This is a post_save receiver, so the KeyError escaped the
+        # caller's save() after the row had been written (Canusia/ewu#74).
+        # An unconfigured template means no notification -- logged, not a
+        # blank email.
+        message = email_settings.get('teacherapplication_note_to_instructor_email')
+        if not message:
+            logger.warning(
+                'teacherapplication_notes_email.teacherapplication_note_to_instructor_email is not configured; '
+                'skipping the email for %s', instance.id)
+            return
+
+        email_template = Template(message)
         subject = email_settings.get('teacherapplication_note_to_instructor_subject')
         to = [instance.teacher_application.user.email]
 
