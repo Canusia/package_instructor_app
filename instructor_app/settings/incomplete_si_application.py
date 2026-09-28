@@ -12,6 +12,7 @@ from cis.validators import validate_cron, numeric, validate_html_short_code
 from cis.models.crontab import CronTab
 from cis.models.term import Term, AcademicYear
 from cis.models.settings import Setting
+from ..setting_defaults import install_defaults
 
 class SettingForm(forms.Form):
     STATUS_OPTIONS = [
@@ -135,14 +136,7 @@ class incomplete_si_application(SettingForm):
             'is_active': "Debug",
         }
 
-        try:
-            setting = Setting.objects.get(key=self.key)
-        except Setting.DoesNotExist:
-            setting = Setting()
-            setting.key = self.key
-
-        setting.value = defaults
-        setting.save()
+        install_defaults(self.key, defaults)
 
     def run_record(self):
         try:

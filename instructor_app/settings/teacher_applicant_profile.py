@@ -8,6 +8,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import HTML, Layout, Submit
 
 from cis.models.settings import Setting
+from ..setting_defaults import install_defaults
 
 
 # Mandatory-flow fields (email + password fields) must never be hidden
@@ -184,13 +185,7 @@ class teacher_applicant_profile(SettingForm):
             'labels':   {},
             'weights':  {},
         }
-        try:
-            setting = Setting.objects.get(key=self.key)
-        except Setting.DoesNotExist:
-            setting = Setting()
-            setting.key = self.key
-        setting.value = defaults
-        setting.save()
+        install_defaults(self.key, defaults)
 
     def run_record(self):
         try:

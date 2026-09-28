@@ -14,6 +14,7 @@ from crispy_forms.layout import Submit, Layout, HTML
 from cis.models.crontab import CronTab
 from cis.models.term import Term, AcademicYear
 from cis.models.settings import Setting
+from ..setting_defaults import install_defaults
 from cis.validators import validate_cron, validate_email_list, validate_html_short_code
 
 class SettingForm(forms.Form):
@@ -354,14 +355,7 @@ class teacher_application_email(SettingForm):
             'app_approved_email': "Change this in Settings -> Teacher -> Application Email(s)",
         }
 
-        try:
-            setting = Setting.objects.get(key=self.key)
-        except Setting.DoesNotExist:
-            setting = Setting()
-            setting.key = self.key
-
-        setting.value = defaults
-        setting.save()
+        install_defaults(self.key, defaults)
 
     @classmethod
     def from_db(cls):

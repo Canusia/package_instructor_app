@@ -12,6 +12,7 @@ from form_fields import fields as FFields
 
 from cis.models.term import Term, AcademicYear
 from cis.models.settings import Setting
+from ..setting_defaults import install_defaults
 from cis.validators import validate_json
 
 FACULTY_REVIEW_TEACHER_INFO_DEFAULT = (
@@ -1048,14 +1049,7 @@ class inst_app_language(SettingForm):
             'status_labels': '{}',
         }
 
-        try:
-            setting = Setting.objects.get(key=self.key)
-        except Setting.DoesNotExist:
-            setting = Setting()
-            setting.key = self.key
-
-        setting.value = defaults
-        setting.save()
+        install_defaults(self.key, defaults)
 
     @classmethod
     def from_db(cls):
