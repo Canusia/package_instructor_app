@@ -1,3 +1,10 @@
+{% comment %}
+Each pane, and its DataTable init, renders unless the including page passes
+show_course_requirements=False / show_course_administrators=False -- cis
+drives both from its course_index_tabs registry (package-cis #41). A caller
+that passes neither gets both panes, as before.
+{% endcomment %}
+{% if show_course_requirements is not False %}
 <div class="tab-pane" id="course_requirements">
     <div class="bg-white border border-top-0">
         <div class="card border-top-0">
@@ -30,7 +37,9 @@
     </div>
 
 </div>
+{% endif %}
 
+{% if show_course_administrators is not False %}
 <div class="tab-pane" id="course_administrators">
     <script>
 
@@ -62,6 +71,7 @@
     </div>
 
 </div>
+{% endif %}
 
 <script>
     function do_req_bulk_action(action, dt) {
@@ -122,6 +132,7 @@
 
     $(document).ready(function () {
 
+        {% if show_course_requirements is not False %}
         table_course_requirements = $('#table_course_requirements')
             .DataTable({initComplete: function () {
                     this.api()
@@ -249,7 +260,9 @@
                 ]
             }
         );
+        {% endif %}
 
+        {% if show_course_administrators is not False %}
         table_course_administrator = $('#table_course_administrator')
            .DataTable({
                 dom: 'B<"float-left mt-3 mb-3"l><"float-right mt-3"f><"row clear">rt<"row"<"col-6"i><"col-6 float-right"p>>',
@@ -289,5 +302,6 @@
                 ]
             }
         );
+        {% endif %}
     });
 </script>
