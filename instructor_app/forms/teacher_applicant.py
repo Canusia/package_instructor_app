@@ -14,6 +14,7 @@ from django.core.validators import validate_email
 from django_recaptcha.fields import ReCaptchaField
 
 from cis.models.customuser import CustomUser
+from cis.highschool_scope import picker_queryset
 from cis.models.highschool import HighSchool
 from cis.models.term import AcademicYear
 from cis.models.course import Course, CourseAppRequirement
@@ -1001,9 +1002,9 @@ class EditSchoolCourseForm(forms.Form):
             ('', 'Select')
         ]
         highschools += [
-            (h.id, h.name) for h in HighSchool.objects.filter(
-                status__in=['Active']
-            )
+            (h.id, h.name) for h in picker_queryset(
+                keep=teacher_application.highschool_id
+                if teacher_application else None)
         ]
         self.fields['highschool'].choices = highschools
 
@@ -1181,9 +1182,9 @@ class SchoolCourseForm(forms.Form):
         # Build highschool choices
         highschools = [('', 'Select')]
         highschools += [
-            (h.id, h.name) for h in HighSchool.objects.filter(
-                status__in=['Active']
-            )
+            (h.id, h.name) for h in picker_queryset(
+                keep=teacher_application.highschool_id
+                if teacher_application else None)
         ]
 
         if allow_new_school:
