@@ -3,6 +3,39 @@
 Releases are tagged `vYYYY.MAJOR.MINOR` on `Canusia/package_instructor_app` and consumed by
 each tenant through the `git+https://…@<tag>` pin in `webapp/requirements.txt`.
 
+## 2026.0.31
+
+Maintenance release on the 2026.0.x line, cut from 2026.0.29 for tenants not on multi-campus
+`cis`. It contains 2026.0.29 plus the fixes below and does **not** include 2026.0.30's
+campus-scoped high school pickers or its `myce_cis>=0.1.7a` requirement. The same fixes ship
+on the 2026.1 line as 2026.1.0.
+
+### Fixed
+
+* **CE Checklist hidden when every item is removed (#3).** A `checklist_config` saved as an
+  empty list removes the Checklist field from the CE application page. Only a setting that was
+  never saved falls back to the four built-in items. Saving the form while the field is hidden
+  keeps the checklist already recorded on the application, and the settings editor no longer
+  reloads the defaults over a saved empty list.
+* **Import as Instructor files uploads under a matching media type (#4).** Each copied
+  `TeacherUpload` takes its media type from the name of the requirement it was uploaded for:
+  whole-word and case-insensitive, so "Current Resume" becomes Resume and "Official
+  Transcripts" becomes Transcript. No match, or names pointing at different types, gives
+  "Other". The description names the requirement and course.
+* **Notes credit the user who acted (#5).** Notes for status changes, reviewers being added and
+  reviewer decisions record the CE user, reviewer or applicant who made the change. Previously
+  they showed the assignee or "System". Automated changes still read "System". Reviewers
+  auto-assigned by a status change are credited to whoever changed the status.
+* **Faculty reviewers see only their own courses' uploads (#6).** The review page lists only
+  uploads tied to a requirement of a course the user reviews on that application. Uploads tied
+  to no requirement are shown under "General".
+
+### Upgrade notes
+
+* **Do not install 2026.0.30.** It added the `myce_cis>=0.1.7a` requirement in a patch release.
+  Tenants pinned at 2026.0.30 should move to 2026.1.0 if they run multi-campus `cis`, otherwise
+  to 2026.0.31.
+
 ## 2026.0.26
 
 ### Changed
