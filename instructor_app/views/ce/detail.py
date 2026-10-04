@@ -216,7 +216,7 @@ def detail(request, record_id):
         if request.POST.get('action') == 'edit_application':
             form = EditTeacherApplicationForm(request.POST)
             if form.is_valid():
-                form.save(record)
+                form.save(record, changed_by=request.user)
 
                 messages.add_message(
                     request,

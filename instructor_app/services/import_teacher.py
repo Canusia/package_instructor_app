@@ -1,7 +1,44 @@
 import logging
+import re
 from datetime import datetime
 
+from django.core.exceptions import ValidationError
+
 logger = logging.getLogger(__name__)
+
+
+def media_type_for_requirements(requirement_names):
+    """Pick the TeacherUpload media type for an upload's requirement names.
+
+    A media type matches a name when it appears in it as a whole word,
+    ignoring case and a trailing "s" ("Official Transcripts" -> Transcript).
+    Returns "Other" when nothing matches or the names point at different types.
+    """
+    from cis.models.teacher import TeacherUpload
+
+    media_types = [
+        value for value, _label in TeacherUpload._meta.get_field('media_type').choices
+        if value != 'Other'
+    ]
+
+    matched = set()
+    for name in requirement_names:
+        for media_type in media_types:
+            if re.search(rf'\b{re.escape(media_type)}s?\b', name, re.IGNORECASE):
+                matched.add(media_type)
+
+    return matched.pop() if len(matched) == 1 else 'Other'
+
+
+def upload_description(requirements):
+    """Describe a copied upload by the requirement(s) and course(s) it was for."""
+    if not requirements:
+        return 'Application upload'
+    parts = [
+        f'{req.name} ({req.course.name})' if req.course else req.name
+        for req in requirements
+    ]
+    return 'Application upload for: ' + '; '.join(parts)
 
 
 def import_as_teacher(application):
@@ -14,6 +51,7 @@ def import_as_teacher(application):
 
     Returns the Teacher instance.
     """
+    from cis.models.course import CourseAppRequirement
     from cis.models.teacher import (
         Teacher, TeacherHighSchool, TeacherCourseCertificate, TeacherUpload
     )
@@ -59,9 +97,18 @@ def import_as_teacher(application):
         )
 
         for upload in uploads:
+            try:
+                requirements = list(CourseAppRequirement.objects.filter(
+                    id__in=upload.associated_with or []
+                ).select_related('course').order_by('course__name', 'name'))
+            except (ValidationError, TypeError):
+                # A malformed id must not stop the remaining uploads copying.
+                requirements = []
             new_file = TeacherUpload(
                 teacher=teacher,
-                media_type='Other',
+                media_type=media_type_for_requirements(
+                    [req.name for req in requirements]),
+                description=upload_description(requirements),
                 media=upload.upload
             )
             new_file.save()

@@ -158,6 +158,7 @@ def update_reviewer_status(request):
         if not reviewer.misc_info:
             reviewer.misc_info = {}
         reviewer.status = status
+        reviewer._changed_by = request.user
         reviewer.save()
 
         return JsonResponse({
@@ -335,6 +336,7 @@ def add_reviewer(request, record_id):
             try:
                 course_reviewer = form.save(commit=False)
                 course_reviewer.application_course = application_course
+                course_reviewer._changed_by = request.user
                 course_reviewer.save()
                 return JsonResponse({
                     'status': 'success',
@@ -424,6 +426,7 @@ def add_new_course_reviewer(request):
             try:
                 course_reviewer = form.save(commit=False)
                 course_reviewer.application_course = application_course
+                course_reviewer._changed_by = request.user
                 course_reviewer.save()
 
                 return JsonResponse({

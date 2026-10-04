@@ -168,6 +168,7 @@ def review_application(request, record_id):
 
     if request.method == 'POST':
         teacher_application.status = 'Submitted'
+        teacher_application._changed_by = request.user
         teacher_application.save()
 
         messages.add_message(
