@@ -231,7 +231,7 @@
 
                     <h5 class="mt-5 card-title">Application Uploads</h5>
                     <p class="alert alert-info">Please click on the file name to download it.</p>
-                    {% if teacher_application.has_uploaded_material %}
+                    {% if uploads %}
                     <table class="table table-striped">
                         <thead>
                             <tr>
@@ -249,7 +249,26 @@
                         </tbody>
                     </table>
                     {% else %}
-                    <p class="alert alert-danger">No files have been uploaded</p>
+                    <p class="alert alert-danger">No files have been uploaded for the course(s) you are reviewing</p>
+                    {% endif %}
+
+                    {% if general_uploads %}
+                    <h6 class="mt-4">General</h6>
+                    <p class="text-muted small">Files the applicant did not tie to a specific course requirement.</p>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>File</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for upload in general_uploads %}
+                            <tr>
+                                <td><a target="_blank" href="{{ upload.upload.url }}">{{ upload.upload|getfilename }}</a></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                     {% endif %}
                 </div>
             </div>

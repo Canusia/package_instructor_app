@@ -275,6 +275,8 @@ class TeacherApplication(models.Model):
                         application_course=applied_course,
                         reviewer=fc_reviewer.user
                     )
+                    # Credit the auto-assignment to whoever changed the status.
+                    reviewer._changed_by = getattr(self, '_changed_by', None)
                     reviewer.save()
                 except Exception as e:
                     print(e)
@@ -591,6 +593,34 @@ class TeacherApplication(models.Model):
         return ApplicationUpload.objects.filter(
             teacher_application=self
         )
+
+    def uploads_for_reviewer(self, user):
+        """Split uploads into (for the user's reviewed courses, general).
+
+        A faculty reviewer sees only uploads tied to a requirement of a course
+        they review on this application, plus uploads tied to no requirement.
+        """
+        from cis.models.course import CourseAppRequirement
+        from .applicant_course_reviewer import ApplicantCourseReviewer
+
+        reviewed_courses = ApplicantCourseReviewer.objects.filter(
+            reviewer=user,
+            application_course__teacherapplication=self,
+        ).values_list('application_course__course_id', flat=True)
+        requirement_ids = {
+            str(req_id) for req_id in CourseAppRequirement.objects.filter(
+                course_id__in=reviewed_courses
+            ).values_list('id', flat=True)
+        }
+
+        course_uploads, general_uploads = [], []
+        for upload in self.uploads():
+            associated = {str(req_id) for req_id in (upload.associated_with or [])}
+            if not associated:
+                general_uploads.append(upload)
+            elif associated & requirement_ids:
+                course_uploads.append(upload)
+        return course_uploads, general_uploads
 
 
     def can_submit(self):

@@ -111,6 +111,7 @@ def review_application(request, record_id):
             if review_form.cleaned_data.get('mentor'):
                 course_review.misc_info['mentor_id'] = review_form.cleaned_data['mentor']
 
+            course_review._changed_by = user
             course_review.save()
 
             messages.add_message(
@@ -161,6 +162,10 @@ def review_application(request, record_id):
     }
     form = EdBgForm(initial=initial)
 
+    # Only this reviewer's courses' material; other courses' uploads may be
+    # irrelevant or confidential to them.
+    uploads, general_uploads = teacher_application.uploads_for_reviewer(user)
+
     return render(
         request,
         'instructor_app/faculty/review_application.html',
@@ -179,6 +184,7 @@ def review_application(request, record_id):
             'teacher_info_html': teacher_info_html,
             'ed_bg': teacher_application.user.education_background,
             'ed_bg_form': form,
-            'uploads': teacher_application.uploads()
+            'uploads': uploads,
+            'general_uploads': general_uploads,
         }
     )

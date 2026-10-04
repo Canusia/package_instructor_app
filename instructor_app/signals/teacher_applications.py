@@ -55,10 +55,14 @@ def assign_new_reviewer(sender, instance, created, **kwargs):
     reviewer_name = f'{instance.reviewer.first_name} {instance.reviewer.last_name}'
     course_name = str(instance.application_course.course)
 
+    # _changed_by is set by the view that acted; without it the note is "System".
+    changed_by = getattr(instance, '_changed_by', None)
+
     if created:
         _add_system_note(
             app,
             f'Reviewer {reviewer_name} added for course {course_name}.',
+            createdby=changed_by,
         )
     else:
         instance.notify_status_change(instance.status)
@@ -66,7 +70,7 @@ def assign_new_reviewer(sender, instance, created, **kwargs):
             _add_system_note(
                 app,
                 f'Reviewer {reviewer_name} submitted decision "{instance.status}" for course {course_name}.',
-                createdby=instance.reviewer,
+                createdby=changed_by or instance.reviewer,
             )
 
 @receiver(post_save, sender=ApplicantRecommendation)
@@ -169,7 +173,9 @@ def teacher_app_status_updated(sender, instance, **kwargs):
         _add_system_note(
             instance,
             f'Status changed from "{previous_status}" to "{status}".',
-            createdby=instance.assigned_to,
+            # Set by the view that acted; None (shown as "System") for
+            # automated changes. Not the assignee, who may not have acted.
+            createdby=getattr(instance, '_changed_by', None),
         )
 
         if previous_status == 'Submitted':

@@ -16,12 +16,14 @@ function initChecklistConfig() {
         {value: 'Imported into PS', label: 'Imported into PS'}
     ];
 
+    // Defaults only when never saved; a saved "[]" means the tenant removed
+    // every item and must stay empty (package_instructor_app#3).
     var items = defaultItems;
     try {
         var val = $hiddenField.val();
         if (val) {
             var parsed = JSON.parse(val);
-            if (Array.isArray(parsed) && parsed.length > 0) {
+            if (Array.isArray(parsed)) {
                 items = parsed;
             }
         }

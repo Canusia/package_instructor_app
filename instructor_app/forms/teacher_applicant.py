@@ -304,6 +304,28 @@ class ApplicantCourseReviewerForm(forms.ModelForm):
         )
         self.fields['application_course_id'].initial = application_course.id
 
+DEFAULT_CHECKLIST_ITEMS = [
+    ('Class Assigned', 'Class Assigned'),
+    ('Hotel Room Requested', 'Hotel Room Requested'),
+    ('NetID Activated', 'NetID Activated'),
+    ('Imported into PS', 'Imported into PS'),
+]
+
+
+def get_checklist_items(app_settings):
+    """(value, label) checklist choices from the inst_app_language setting.
+
+    A config that was never saved (missing or '') gets the defaults; a saved
+    empty list returns [] so the caller can hide the checklist.
+    """
+    checklist_config = app_settings.get('checklist_config')
+    if checklist_config is None or checklist_config == '':
+        return list(DEFAULT_CHECKLIST_ITEMS)
+    if isinstance(checklist_config, str):
+        checklist_config = json.loads(checklist_config)
+    return [(item['value'], item['label']) for item in checklist_config]
+
+
 class EditTeacherApplicationForm(forms.Form):
     action = forms.CharField(
         required=False,
@@ -401,29 +423,20 @@ class EditTeacherApplicationForm(forms.Form):
             (acad_year.id, acad_year.name) for acad_year in AcademicYear.objects.all()
         ]
 
-        # Load checklist choices from settings
+        # An emptied checklist means the tenant doesn't use it — drop the field.
         from ..settings.inst_app_language import inst_app_language
-        app_settings = inst_app_language.from_db()
-        checklist_config = app_settings.get('checklist_config')
-        if checklist_config:
-            if isinstance(checklist_config, str):
-                checklist_config = json.loads(checklist_config)
-            self.fields['checklist'].choices = [
-                (item['value'], item['label']) for item in checklist_config
-            ]
+        checklist_items = get_checklist_items(inst_app_language.from_db())
+        if checklist_items:
+            self.fields['checklist'].choices = checklist_items
         else:
-            self.fields['checklist'].choices = [
-                ('Class Assigned', 'Class Assigned'),
-                ('Hotel Room Requested', 'Hotel Room Requested'),
-                ('NetID Activated', 'NetID Activated'),
-                ('Imported into PS', 'Imported into PS'),
-            ]
-        
+            del self.fields['checklist']
 
-    def save(self, teacher_application):
+    def save(self, teacher_application, changed_by=None):
         data = self.cleaned_data
 
         teacher_application.status = data['status']
+        # Read by the status-change signal to credit the note to this user.
+        teacher_application._changed_by = changed_by
         # if data['assigned_to']:
         #     teacher_application.assigned_to = data['assigned_to']
 
@@ -438,7 +451,8 @@ class EditTeacherApplicationForm(forms.Form):
         
         teacher_application.misc_info['participating_acad_year'] = data.get('participating_acad_year')
         # teacher_application.misc_info['grad_credit'] = data.get('grad_credit')
-        teacher_application.misc_info['checklist'] = data.get('checklist')
+        if 'checklist' in self.fields:
+            teacher_application.misc_info['checklist'] = data.get('checklist')
         
         if data.get('psid'):
             teacher_application.user.psid = data.get('psid')
