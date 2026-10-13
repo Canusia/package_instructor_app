@@ -7,7 +7,7 @@ with open(os.path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='instructor-app',
-    version='2026.1.0',
+    version='2026.1.1',
     description='Django app for instructor application management in MyCE',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -18,8 +18,9 @@ setup(
     include_package_data=True,
     install_requires=[
         'Django>=3.2',
-        'myce_cis>=0.1.7a',
     ],
+    # Campus-scoped school pickers (cis.highschool_scope); optional.
+    extras_require={'campus': ['myce_cis>=0.1.7a']},
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Web Environment',

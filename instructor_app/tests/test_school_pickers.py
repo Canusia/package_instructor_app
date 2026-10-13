@@ -1,10 +1,16 @@
 """Campus-scoped school pickers on the applicant forms (cis HighSchoolCampus)."""
+import importlib.util
+import unittest
 import uuid
 
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.test import TestCase, override_settings
 from django.utils import timezone
+
+# Campus scoping needs package-cis >= 0.1.7a; an in-repo cis has none.
+if not importlib.util.find_spec('cis.highschool_scope'):
+    raise unittest.SkipTest('cis.highschool_scope unavailable (in-repo cis)')
 
 from cis.campus_context import campus_context
 from cis.models.course import Campus

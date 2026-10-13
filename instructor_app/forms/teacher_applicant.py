@@ -13,8 +13,9 @@ from django.core.validators import validate_email
 
 from django_recaptcha.fields import ReCaptchaField
 
+import importlib.util
+
 from cis.models.customuser import CustomUser
-from cis.highschool_scope import picker_queryset
 from cis.models.highschool import HighSchool
 from cis.models.term import AcademicYear
 from cis.models.course import Course, CourseAppRequirement
@@ -40,6 +41,23 @@ from form_fields import fields as FFields
 from passwords.validators import (
     DictionaryValidator, LengthValidator, ComplexityValidator
 )
+
+
+def _active_schools_picker(campus=None, keep=None):
+    """Pre-2026.1 picker: active schools, plus ``keep`` (instance or pk)."""
+    keep_pk = getattr(keep, 'pk', keep) or None
+    cond = Q(status__in=['Active'])
+    if keep_pk is not None:
+        cond |= Q(pk=keep_pk)
+    return HighSchool.objects.filter(cond).order_by('name')
+
+
+# Campus-scoped pickers need package-cis >= 0.1.7a. A tenant with an in-repo
+# cis has no cis.highschool_scope and keeps the pre-2026.1 picker.
+if importlib.util.find_spec('cis.highschool_scope'):
+    from cis.highschool_scope import picker_queryset
+else:
+    picker_queryset = _active_schools_picker
 
 
 class MigrateForm(forms.Form):

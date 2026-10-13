@@ -3,6 +3,17 @@
 Releases are tagged `vYYYY.MAJOR.MINOR` on `Canusia/package_instructor_app` and consumed by
 each tenant through the `git+https://…@<tag>` pin in `webapp/requirements.txt`.
 
+## 2026.1.1
+
+### Changed
+
+* **Installs on tenants with an in-repo `cis`.** `myce_cis>=0.1.7a` is no longer a required
+  dependency; it moves to the optional `campus` extra (`instructor-app[campus]`). When
+  `cis.highschool_scope` is unavailable, the applicant school pickers fall back to the
+  pre-2026.1 list (active schools, plus the application's current school), and
+  `test_school_pickers` skips. Multi-campus tenants are unaffected. The 2026.1 line can now
+  replace 2026.0.x on any tenant whose `cis` has the other modules this package imports.
+
 ## 2026.1.0
 
 First release of the 2026.1 line, for tenants on multi-campus `cis` (`myce_cis>=0.1.7a`). It
