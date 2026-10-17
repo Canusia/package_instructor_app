@@ -18,7 +18,26 @@ from ...serializers.teacher_application import (
     ApplicantCourseListSerializer,
 )
 
-from cis.utils import CIS_user_only, FACULTY_user_only, HSADMIN_user_only
+from cis.utils import (
+    CIS_user_only, FACULTY_user_only, HSADMIN_user_only, user_has_cis_role,
+)
+
+
+def _reviewed_application_ids(user):
+    """Applications `user` is an assigned course reviewer on."""
+    return ApplicantCourseReviewer.objects.filter(
+        reviewer=user
+    ).values('application_course__teacherapplication_id')
+
+
+def _scope_to_reviewer(request, records, application_path):
+    """CE sees every row; any other role these feeds admit (faculty, HS
+    admin) sees only applications it reviews (#7). Derived from
+    request.user -- never from a client-supplied reviewer id."""
+    if user_has_cis_role(request.user):
+        return records
+    return records.filter(**{
+        f'{application_path}__in': _reviewed_application_ids(request.user)})
 
 
 class TeacherApplicantViewSet(viewsets.ReadOnlyModelViewSet):
@@ -39,7 +58,9 @@ class TeacherApplicantViewSet(viewsets.ReadOnlyModelViewSet):
         pending_only = self.request.GET.get('pending_only', '').strip()
         if pending_only:
             records = records.filter(account_verified=False)
-        return records
+        return _scope_to_reviewer(
+            self.request, records, 'user__inst_app_teacherapplication_set__id'
+        ).distinct()
 
 
 class ApplicantCourseListViewSet(viewsets.ReadOnlyModelViewSet):
@@ -91,6 +112,9 @@ class TeacherApplicationReviewerViewSet(viewsets.ReadOnlyModelViewSet):
             records = records.filter(
                 application_course__teacherapplication__id__in=cohort_apps
             )
+        if not user_has_cis_role(self.request.user):
+            # Only the caller's own reviewer rows, not colleagues' (#7).
+            records = records.filter(reviewer=self.request.user)
         return records
 
 
@@ -174,4 +198,4 @@ class TeacherApplicationViewSet(viewsets.ReadOnlyModelViewSet):
             records = records.filter(
                 id__in=cohort_apps
             )
-        return records
+        return _scope_to_reviewer(self.request, records, 'id')

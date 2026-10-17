@@ -1,6 +1,8 @@
 import logging
+import uuid
 from datetime import datetime
 
+from django.http import Http404
 from django.shortcuts import render, get_object_or_404
 from django.contrib import messages
 from django.template import Template, Context
@@ -73,9 +75,39 @@ def _mentor_choices_for_course(course):
     ).select_related('user')
 
 
+def _my_course_reviews(user, teacher_application):
+    """`user`'s reviewer rows on `teacher_application`.
+
+    Everything on the review page is scoped through this (#7): the faculty
+    role alone is not enough to open an application or decide a course.
+    """
+    return ApplicantCourseReviewer.objects.filter(
+        reviewer=user,
+        application_course__teacherapplication=teacher_application,
+    )
+
+
+def _my_course_review_or_404(user, teacher_application, course_review_id):
+    """One of `user`'s reviewer rows on this application, else 404 -- also
+    for a malformed id (the pk is a UUID, so a bad one would 500)."""
+    try:
+        uuid.UUID(str(course_review_id))
+    except (TypeError, ValueError, AttributeError):
+        raise Http404('No review matches the given query.')
+    return get_object_or_404(
+        _my_course_reviews(user, teacher_application).select_related(
+            'application_course__course'),
+        pk=course_review_id)
+
+
 def review_application(request, record_id):
     teacher_application = get_object_or_404(TeacherApplication, pk=record_id)
     user = request.user
+
+    # A faculty user who reviews no course on this application gets the same
+    # 404 as a missing application (#7).
+    if not _my_course_reviews(user, teacher_application).exists():
+        raise Http404('No TeacherApplication matches the given query.')
 
     review_form_config = _get_review_form_config()
 
@@ -83,13 +115,9 @@ def review_application(request, record_id):
         post_course_review_id = request.POST.get('application_course_id')
         mentor_qs = []
         if post_course_review_id:
-            try:
-                acr = ApplicantCourseReviewer.objects.select_related(
-                    'application_course__course'
-                ).get(id=post_course_review_id)
-                mentor_qs = _mentor_choices_for_course(acr.application_course.course)
-            except ApplicantCourseReviewer.DoesNotExist:
-                pass
+            acr = _my_course_review_or_404(
+                user, teacher_application, post_course_review_id)
+            mentor_qs = _mentor_choices_for_course(acr.application_course.course)
 
         review_form = ApplicantReviewForm(
             request.POST,
@@ -98,8 +126,9 @@ def review_application(request, record_id):
         )
 
         if review_form.is_valid():
-            course_review_id = review_form.cleaned_data['application_course_id']
-            course_review = ApplicantCourseReviewer.objects.get(id=course_review_id)
+            course_review = _my_course_review_or_404(
+                user, teacher_application,
+                review_form.cleaned_data['application_course_id'])
 
             course_review.status = review_form.cleaned_data['decision']
             if not course_review.misc_info:
@@ -123,10 +152,8 @@ def review_application(request, record_id):
             logger.warning('Review form validation failed: %s', review_form.errors)
 
     menu = draw_menu(FACULTY_MENU, 'manage_app', '', 'faculty')
-    courses = ApplicantCourseReviewer.objects.filter(
-        reviewer=user,
-        application_course__teacherapplication=teacher_application
-    ).select_related('application_course__course')
+    courses = _my_course_reviews(user, teacher_application).select_related(
+        'application_course__course')
 
     teacher_info_tmpl = inst_app_language.from_db().get('faculty_review_teacher_info') or FACULTY_REVIEW_TEACHER_INFO_DEFAULT
     teacher_info_html = Template(teacher_info_tmpl).render(Context({'record': teacher_application}))
