@@ -153,7 +153,7 @@ Located in `staticfiles/js/`. Registered in `STATICFILES_DIRS` via `get_package_
 
 **CIS Models:** CustomUser, HighSchool, District, Course, CourseAppRequirement, Cohort, AcademicYear, Term, FacultyCoordinator, TeacherApplicationNote, Alert, Setting, CronTab, Teacher, TeacherHighSchool, TeacherCourseCertificate, TeacherUpload
 
-**External Packages:** django-mailer, pdfkit, django-recaptcha, django-model-utils (FieldTracker), form_fields, passwords, django-crispy-forms, djangorestframework, alerts
+**External Packages:** django-mailer, pdfkit, django-recaptcha (unless the tenant provides `cis.captcha.CaptchaField`, e.g. ALTCHA — see `captcha.py`), django-model-utils (FieldTracker), form_fields, passwords, django-crispy-forms, djangorestframework, alerts
 
 **Storage:** `cis.storage_backend.PrivateMediaStorage` for uploads and recommendations
 

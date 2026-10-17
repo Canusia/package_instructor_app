@@ -270,4 +270,4 @@ Each setting class inherits from a `SettingForm` base and exposes a `from_db()` 
 - `Alert` — from `alerts`
 - `Setting` — from `setting` package
 
-**Packages**: `django-recaptcha`, `django-crispy-forms`, `model_utils` (FieldTracker), `pdfkit`, `mailer`
+**Packages**: `django-recaptcha` (or the tenant's `cis.captcha.CaptchaField`, resolved in `captcha.py`), `django-crispy-forms`, `model_utils` (FieldTracker), `pdfkit`, `mailer`

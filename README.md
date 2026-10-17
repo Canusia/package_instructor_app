@@ -437,6 +437,19 @@ The `future_sections` app can automatically create teacher applications when HS 
 | `create_new_instructor_app` | Which `TeacherCourseCertificate` statuses trigger application creation |
 | `default_instructor_app_status` | Initial status for auto-created applications (e.g., "In Progress") |
 
+## Captcha provider
+
+The two public applicant forms (email verification and note reply) take their
+captcha field from `instructor_app/captcha.py`:
+
+- **Tenant has `cis/captcha.py`:** its `CaptchaField` is used, e.g. ALTCHA
+  (`django-altcha`), self-hosted with no Google account. The tenant field
+  should set `is_hidden = False` on its widget, or crispy forms hides a failed
+  check's error.
+- **Otherwise:** `django_recaptcha.fields.ReCaptchaField`, as before.
+  django-recaptcha is not in `install_requires`; tenants on reCAPTCHA install
+  it themselves.
+
 ## Installation
 
 ### 1. Add to `INSTALLED_APPS`

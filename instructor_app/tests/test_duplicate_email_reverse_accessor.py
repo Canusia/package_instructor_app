@@ -63,7 +63,7 @@ def no_welcome_email():
 
 
 def clean_email_for(value):
-    """Drive clean_email directly — the full form carries a ReCaptchaField."""
+    """Drive clean_email directly — the full form carries a captcha field."""
     form = TeacherApplicantVerifyEmailForm()
     form.cleaned_data = {'email': value}
     return form.clean_email()

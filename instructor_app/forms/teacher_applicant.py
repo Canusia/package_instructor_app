@@ -11,7 +11,7 @@ from django.utils.translation import gettext_lazy as _
 from django.utils.safestring import mark_safe
 from django.core.validators import validate_email
 
-from django_recaptcha.fields import ReCaptchaField
+from ..captcha import CaptchaField
 
 import importlib.util
 
@@ -190,9 +190,7 @@ class NoteReplyForm(forms.Form):
         help_text=''
     )
 
-    captcha = ReCaptchaField(
-        label=''
-    )
+    captcha = CaptchaField(label='')
 
     def __init__(self, note, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1347,7 +1345,7 @@ class TeacherApplicantVerifyEmailForm(MetaFormMixin, forms.Form):
         validate={'required': 'true', 'match': 'email'},
     )
 
-    captcha = ReCaptchaField(label='')
+    captcha = CaptchaField(label='')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
