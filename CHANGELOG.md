@@ -5,6 +5,26 @@ each tenant through the `git+https://…@<tag>` pin in `webapp/requirements.txt`
 
 ## 2026.1.1
 
+### Security
+
+* **Faculty review page checks the reviewer (#7).** A faculty user could open any
+  application's review page and record a decision on a colleague's course. The page now 404s
+  for anyone who isn't a reviewer of that application, and the decision only updates the
+  caller's own review row. The applicant, reviewer and application feeds return only
+  applications the caller reviews (CE still sees all), whatever the browser sends as
+  `reviewer=`.
+
+### Added
+
+* **Captcha provider from the tenant (#8, #9).** The applicant forms use the tenant's
+  `cis.captcha` field (self-hosted ALTCHA) when the host's `cis` has it, and fall back to
+  `ReCaptchaField` otherwise. See README → "Captcha provider".
+* **Reusable course-administrators table (#2).** The `/ce/courses/` Course Administrators
+  table is built through the shared table-config seam (`faculty_coords_by_course` variant),
+  so a tenant can declare its columns once; without the variant the built-in table is used.
+  Both course-requirements tables are partials parameterised by table id, feed URL, details
+  prefix and bulk-actions URL.
+
 ### Changed
 
 * **Installs on tenants with an in-repo `cis`.** `myce_cis>=0.1.7a` is no longer a required
