@@ -89,7 +89,7 @@ class ReviewPageScopeTests(_Base):
         request._messages = mock.MagicMock()
         with mock.patch.object(faculty_views, 'render', return_value=HttpResponse('ok')) as render, \
                 mock.patch.object(faculty_views, 'draw_menu', return_value=''), \
-                mock.patch.object(faculty_views, 'portal_lang'):
+                mock.patch.object(faculty_views, 'portal_text', return_value={}):
             response = faculty_views.review_application(request, app.id)
         return response, render
 
