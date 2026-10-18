@@ -3,6 +3,15 @@
 Releases are tagged `vYYYY.MAJOR.MINOR` on `Canusia/package_instructor_app` and consumed by
 each tenant through the `git+https://…@<tag>` pin in `webapp/requirements.txt`.
 
+## 2026.1.2
+
+### Changed
+
+* **Faculty and instructor page text comes from the portal packages when installed**
+  (package-cis#81, #82). `portal_text(role)` reads package-faculty's /
+  package-instructor_portal's setting and falls back to cis's copy, so the pages work on
+  tenants on either side of the move.
+
 ## 2026.1.1
 
 ### Security
