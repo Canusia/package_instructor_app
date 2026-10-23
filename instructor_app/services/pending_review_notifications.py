@@ -39,7 +39,7 @@ send_pending_review_notifications(pending) -> dict
 import logging
 
 from cis.models.customuser import CustomUser
-from cis.models.note import TeacherApplicationNote
+from ..models.teacher_application_note import TeacherApplicationNote  # #11
 
 from ..models.teacher_applicant import ApplicantCourseReviewer
 

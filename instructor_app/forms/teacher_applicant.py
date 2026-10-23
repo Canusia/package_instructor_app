@@ -25,7 +25,8 @@ from ..models.teacher_applicant import (
     ApplicantCourseReviewer
 )
 
-from cis.models.note import TeacherApplicationNote
+# Application notes live in the package's own table only (#11).
+from ..models.teacher_application_note import TeacherApplicationNote
 
 from ..services.applicant_eligibility import (
     existing_user_may_apply,

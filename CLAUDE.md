@@ -123,6 +123,9 @@ Both commands support `--dry-run` (prints what would happen, sends nothing) and 
 
 - **`notify_incomplete_si_app`** - Cron job reminding applicants with incomplete applications. Delegates to `services/incomplete_notifications.py`.
 - **`notify_si_pending_review`** - Cron job reminding faculty reviewers with outstanding course reviews. Delegates to `services/pending_review_notifications.py`.
+- **`copy_legacy_application_notes`** - One-off, idempotent: copies application notes older code wrote to the host's `cis.TeacherApplicationNote` into the package table, keeping ids (#11). No-op unless that cis model references this package's TeacherApplication.
+
+**Application notes** live only in `instructor_app.TeacherApplicationNote` (`models/teacher_application_note.py`). Never write `cis.models.note.TeacherApplicationNote` — each screen used to read one table or the other, so replies, faculty-visible notes and reminder history went missing (#11). `services/legacy_notes.py` handles the legacy table.
 
 ## Services
 
@@ -151,7 +154,7 @@ Located in `staticfiles/js/`. Registered in `STATICFILES_DIRS` via `get_package_
 
 ## Key Dependencies
 
-**CIS Models:** CustomUser, HighSchool, District, Course, CourseAppRequirement, Cohort, AcademicYear, Term, FacultyCoordinator, TeacherApplicationNote, Alert, Setting, CronTab, Teacher, TeacherHighSchool, TeacherCourseCertificate, TeacherUpload
+**CIS Models:** CustomUser, HighSchool, District, Course, CourseAppRequirement, Cohort, AcademicYear, Term, FacultyCoordinator, Alert, Setting, CronTab, Teacher, TeacherHighSchool, TeacherCourseCertificate, TeacherUpload
 
 **External Packages:** django-mailer, pdfkit, django-recaptcha (unless the tenant provides `cis.captcha.CaptchaField`, e.g. ALTCHA — see `captcha.py`), django-model-utils (FieldTracker), form_fields, passwords, django-crispy-forms, djangorestframework, alerts
 

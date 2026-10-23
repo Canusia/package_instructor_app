@@ -596,6 +596,9 @@ def delete_record(request, record_id):
     TeacherApplicationNote.objects.filter(
         teacher_application=record
     ).delete()
+    # Notes older code left in the host's cis table would block the delete (#11).
+    from ...services.legacy_notes import delete_legacy_notes
+    delete_legacy_notes(record)
 
     ApplicantRecommendation.objects.filter(
         teacher_application=record

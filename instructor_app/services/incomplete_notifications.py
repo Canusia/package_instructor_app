@@ -43,7 +43,7 @@ from django.template.loader import get_template
 from mailer import send_html_mail
 
 from cis.models.customuser import CustomUser
-from cis.models.note import TeacherApplicationNote
+from ..models.teacher_application_note import TeacherApplicationNote  # #11
 
 from ..models.teacher_applicant import TeacherApplication
 from ..settings.incomplete_si_application import incomplete_si_application

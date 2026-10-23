@@ -12,7 +12,7 @@ import json as _json
 
 from cis.models.course import Cohort, CourseAdministrator
 from cis.models.faculty import FacultyCoordinator
-from cis.models.note import TeacherApplicationNote
+from ...models.teacher_application_note import TeacherApplicationNote  # #11
 from cis.menu import draw_menu, FACULTY_MENU
 from ...portal_text import portal_text
 
