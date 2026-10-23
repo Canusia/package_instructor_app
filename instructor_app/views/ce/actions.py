@@ -1,6 +1,7 @@
 import logging
 
 from django.contrib import messages
+from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.http import JsonResponse, HttpResponse
 from django.urls import reverse_lazy, reverse
@@ -365,6 +366,17 @@ def add_reviewer(request, record_id):
     })
 
 
+def _parent_on_application(parent, teacher_application):
+    """True if ``parent`` is empty or a note on ``teacher_application``."""
+    if not parent:
+        return True
+    try:
+        return TeacherApplicationNote.objects.filter(
+            pk=parent, teacher_application=teacher_application).exists()
+    except (ValueError, ValidationError):
+        return False
+
+
 def add_note(request, record_id):
     """Add a note to a TeacherApplication via the do-action modal flow."""
     template = 'instructor_app/ce/manage_note.html'
@@ -375,6 +387,9 @@ def add_note(request, record_id):
 
     if request.method == 'POST':
         form = AddNoteForm(request.POST)
+        if form.is_valid() and not _parent_on_application(
+                form.cleaned_data.get('parent'), teacher_application):
+            form.add_error(None, 'That note is not on this application.')
         if form.is_valid():
             try:
                 form.save(request, teacher_application)
@@ -395,7 +410,13 @@ def add_note(request, record_id):
             'errors': form.errors.as_json()
         }, status=400)
 
-    form = AddNoteForm()
+    # The Reply button on a response passes the thread's first note (#11);
+    # replies go to the applicant by email unless CE picks otherwise.
+    parent = request.GET.get('parent')
+    if parent and _parent_on_application(parent, teacher_application):
+        form = AddNoteForm(initial={'parent': parent, 'type': 'to_instructor'})
+    else:
+        form = AddNoteForm()
     return render(request, template, {
         'form': form,
         'record': teacher_application,

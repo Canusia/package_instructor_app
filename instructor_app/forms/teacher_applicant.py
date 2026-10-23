@@ -638,7 +638,8 @@ class EdBgForm(forms.Form):
     # Saved under user.education_background (other_name lives on the user).
     SAVED_FIELDS = [f for f in CONFIGURABLE_FIELDS if f != 'other_name']
     # Added after tenants configured their forms: hidden unless a tenant's
-    # ed_bg_form_config lists them, even when it lists no fields at all (#12).
+    # ed_bg_form_config lists them in "fields" -- including when "fields" is
+    # absent or empty, which otherwise shows every field (#12).
     OPT_IN_FIELDS = ['professional_development']
 
     @classmethod
@@ -665,7 +666,10 @@ class EdBgForm(forms.Form):
             except (json.JSONDecodeError, TypeError):
                 config = {}
 
-        visible_fields = config.get('fields', None)
+        # The settings screen saves "fields": [] when no box is ticked; like an
+        # absent key, that means "show every field" (as its help text says),
+        # not "hide them all".
+        visible_fields = config.get('fields') or None
         required_fields = config.get('required', [])
         custom_labels = config.get('labels', {})
 
@@ -2105,12 +2109,16 @@ class AddNoteForm(forms.Form):
         widget=forms.RadioSelect()
     )
 
+    # Set when CE replies to an applicant's response: the thread's first note.
+    parent = forms.UUIDField(required=False, widget=forms.HiddenInput())
+
     def save(self, request, teacher_application):
         from ..models.teacher_application_note import TeacherApplicationNote
         note = TeacherApplicationNote(
             teacher_application=teacher_application,
             note=self.cleaned_data['note'],
             createdby=request.user,
+            parent=self.cleaned_data.get('parent'),
             meta={'type': self.cleaned_data.get('type') or 'private'}
         )
         note.save()

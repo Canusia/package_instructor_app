@@ -21,6 +21,8 @@ class Command(BaseCommand):
         if legacy_note_model() is None:
             self.stdout.write('No legacy application notes on this tenant; nothing to copy.')
             return
-        copied, present = copy_legacy_notes(dry_run=options['dry_run'])
+        copied, present, skipped = copy_legacy_notes(dry_run=options['dry_run'])
         verb = 'Would copy' if options['dry_run'] else 'Copied'
-        self.stdout.write(f'{verb} {copied} note(s); {present} already present.')
+        self.stdout.write(
+            f'{verb} {copied} note(s); {present} already present; '
+            f'{skipped} skipped (no application).')

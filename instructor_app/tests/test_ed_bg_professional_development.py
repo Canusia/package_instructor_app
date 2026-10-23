@@ -24,6 +24,12 @@ class ProfessionalDevelopmentFieldTests(SimpleTestCase):
         # Older fields keep the "nothing listed = all shown" behaviour.
         self.assertNotIsInstance(form.fields['courses_taught'].widget, forms.HiddenInput)
 
+    def test_empty_fields_list_shows_all_but_opt_in(self):
+        # The settings screen saves "fields": [] when nothing is ticked.
+        form = EdBgForm(config={'fields': []})
+        self.assertNotIsInstance(form.fields['courses_taught'].widget, forms.HiddenInput)
+        self.assertIsInstance(form.fields[FIELD].widget, forms.HiddenInput)
+
     def test_hidden_when_tenant_lists_other_fields(self):
         form = EdBgForm(config={'fields': ['courses_taught']})
         self.assertIsInstance(form.fields[FIELD].widget, forms.HiddenInput)

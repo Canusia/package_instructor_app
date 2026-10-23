@@ -285,10 +285,10 @@
                                                     <td>{% if r.createdby %}{{r.createdby.first_name}} {{r.createdby.last_name}}{% else %}System{% endif %}</td>
                                                     <td>
                                                         {% if r.meta.type == 'response' %}
-                                                        <a href="#notes" class="btn btn-sm btn-primary ajax-add_new"
-                                                            data-parent="{{r.id}}" data-id="-1"
-                                                            data-modal="modal-add_new"
-                                                            data-model="teacherapplicationnote" data-updater=""><i
+                                                        {# Package add_note, not cis /ce/add_new_ajax/, which wrote the cis table (#11). #}
+                                                        <a href="#notes" class="btn btn-sm btn-primary do-action"
+                                                            data-action="add_note"
+                                                            data-url="{% url 'ce_instructor_app:teacher_app_action' record.id %}?parent={{ r.parent|default:r.id }}"><i
                                                                 class="fa fas-light fa-plus-circle"></i>&nbsp;Reply</a>
                                                         {% endif %}
                                                     </td>
