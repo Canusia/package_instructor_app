@@ -170,23 +170,8 @@ def review_application(request, record_id):
     if not ed_bg or isinstance(ed_bg, str):
         ed_bg = {}
 
-    initial = {
-        'teacher_application': teacher_application.id,
-        'other_name': teacher_application.user.previous_names,
-        'transcripts': ed_bg.get('transcript_status'),
-        'credits_earned': ed_bg.get('credits_earned'),
-        'masters_level_credits': ed_bg.get('masters_level_credits'),
-        'grad_courses': ed_bg.get('grad_courses'),
-        'undergrad_program': ed_bg.get('undergrad_program'),
-        'certified_states': ed_bg.get('certified_states'),
-        'certified_subjects': ed_bg.get('certified_subjects'),
-        'highschool_years': ed_bg.get('highschool_years'),
-        'college_years': ed_bg.get('college_years'),
-        'courses_taught': ed_bg.get('courses_taught'),
-        'course_offering_format': ed_bg.get('course_offering_format'),
-        'students_per_class': ed_bg.get('students_per_class'),
-        'previously_enrolled_in_college': ed_bg.get('previously_enrolled_in_college'),
-    }
+    initial = EdBgForm.initial_for(teacher_application)
+    initial['transcripts'] = ed_bg.get('transcript_status')
     form = EdBgForm(initial=initial)
 
     # Only this reviewer's courses' material; other courses' uploads may be

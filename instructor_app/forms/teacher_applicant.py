@@ -622,12 +622,36 @@ class EdBgForm(forms.Form):
         choices=[('', '---'), ('Yes', 'Yes'), ('No', 'No')],
     )
 
+    professional_development = forms.CharField(
+        required=False,
+        label='Discipline specific professional development',
+        widget=forms.Textarea
+    )
+
     CONFIGURABLE_FIELDS = [
         'other_name', 'credits_earned', 'masters_level_credits',
         'grad_courses', 'undergrad_program', 'certified_states',
         'certified_subjects', 'highschool_years', 'college_years', 'courses_taught',
         'course_offering_format', 'students_per_class', 'previously_enrolled_in_college',
+        'professional_development',
     ]
+    # Saved under user.education_background (other_name lives on the user).
+    SAVED_FIELDS = [f for f in CONFIGURABLE_FIELDS if f != 'other_name']
+    # Added after tenants configured their forms: hidden unless a tenant's
+    # ed_bg_form_config lists them, even when it lists no fields at all (#12).
+    OPT_IN_FIELDS = ['professional_development']
+
+    @classmethod
+    def initial_for(cls, teacher_application):
+        """Initial data from the applicant's saved education background."""
+        user = teacher_application.user
+        ed_bg = user.education_background
+        if not isinstance(ed_bg, dict):
+            ed_bg = {}
+        initial = {'teacher_application': teacher_application.id,
+                   'other_name': user.previous_names}
+        initial.update({field: ed_bg.get(field) for field in cls.SAVED_FIELDS})
+        return initial
 
     def __init__(self, *args, **kwargs):
         config = kwargs.pop('config', None)
@@ -648,7 +672,9 @@ class EdBgForm(forms.Form):
         for field_name in self.CONFIGURABLE_FIELDS:
             if field_name not in self.fields:
                 continue
-            if visible_fields is not None and field_name not in visible_fields:
+            hidden = (field_name not in visible_fields if visible_fields is not None
+                      else field_name in self.OPT_IN_FIELDS)
+            if hidden:
                 self.fields[field_name].widget = forms.HiddenInput()
                 self.fields[field_name].required = False
                 continue
@@ -672,11 +698,7 @@ class EdBgForm(forms.Form):
             ed_bg_data['degree'] = degrees
             ed_bg_data['major'] = majors
 
-        for field in ['credits_earned', 'masters_level_credits', 'grad_courses',
-                      'undergrad_program', 'certified_states', 'certified_subjects',
-                      'highschool_years', 'college_years', 'courses_taught',
-                      'course_offering_format', 'students_per_class',
-                      'previously_enrolled_in_college']:
+        for field in self.SAVED_FIELDS:
             ed_bg_data[field] = self.cleaned_data.get(field, '')
 
         user.education_background = ed_bg_data

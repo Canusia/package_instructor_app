@@ -616,6 +616,7 @@ class inst_app_language(SettingForm):
             ('course_offering_format', 'Do you anticipate teaching College courses as stand-alone courses, in conjunction with AP, or blended with non-college courses?'),
             ('students_per_class', 'How many students do you anticipate registering for College credits in each class?'),
             ('previously_enrolled_in_college', 'Have you previously enrolled in college?'),
+            ('professional_development', 'Discipline specific professional development'),
         ]
 
         eb_rows_html = ""
@@ -652,7 +653,8 @@ class inst_app_language(SettingForm):
         ed_bg_config_html += eb_rows_html
         ed_bg_config_html += (
             '</tbody></table>'
-            '<small class="form-text text-muted">If no fields are checked, all fields will be shown by default.</small>'
+            '<small class="form-text text-muted">If no fields are checked, all fields are shown except '
+            '<em>Discipline specific professional development</em>, which shows only when checked.</small>'
             '</div></div>'
         )
 

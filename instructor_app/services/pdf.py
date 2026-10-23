@@ -26,19 +26,8 @@ def application_as_pdf(application):
     if not ed_bg or isinstance(ed_bg, str):
         ed_bg = {}
 
-    ed_bg_form = EdBgForm(initial={
-        'teacher_application': record.id,
-        'other_name': record.user.previous_names,
-        'credits_earned': ed_bg.get('credits_earned'),
-        'masters_level_credits': ed_bg.get('masters_level_credits'),
-        'grad_courses': ed_bg.get('grad_courses'),
-        'undergrad_program': ed_bg.get('undergrad_program'),
-        'certified_states': ed_bg.get('certified_states'),
-        'certified_subjects': ed_bg.get('certified_subjects'),
-        'highschool_years': ed_bg.get('highschool_years'),
-        'college_years': ed_bg.get('college_years'),
-        'courses_taught': ed_bg.get('courses_taught'),
-    })
+    # Every saved field, including the newer ones the PDF used to leave blank (#12).
+    ed_bg_form = EdBgForm(initial=EdBgForm.initial_for(record))
 
     form = EditTeacherApplicationForm(initial={
         'status': record.status,

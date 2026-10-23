@@ -75,6 +75,7 @@
     {% if ed_bg.course_offering_format %}<tr><td>Anticipated Course Offering Format</td><td>{{ ed_bg.course_offering_format }}</td></tr>{% endif %}
     {% if ed_bg.students_per_class %}<tr><td>Anticipated Students Per Class</td><td>{{ ed_bg.students_per_class }}</td></tr>{% endif %}
     {% if ed_bg.previously_enrolled_in_college %}<tr><td>Previously Enrolled in College</td><td>{{ ed_bg.previously_enrolled_in_college }}</td></tr>{% endif %}
+    {% if ed_bg.professional_development %}<tr><td>Discipline Specific Professional Development</td><td>{{ ed_bg.professional_development|linebreaksbr }}</td></tr>{% endif %}
 </table>
 {% endif %}
 

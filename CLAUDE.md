@@ -119,7 +119,7 @@ Three setting modules registered via `CONFIGURATORS`:
 
 ## Management Commands
 
-Both commands support `--dry-run` (prints what would happen, sends nothing) and `-t "YYYY-MM-DD HH:MM:SS"` for cron signal logging.
+The two cron commands support `--dry-run` (prints what would happen, sends nothing) and `-t "YYYY-MM-DD HH:MM:SS"` for cron signal logging.
 
 - **`notify_incomplete_si_app`** - Cron job reminding applicants with incomplete applications. Delegates to `services/incomplete_notifications.py`.
 - **`notify_si_pending_review`** - Cron job reminding faculty reviewers with outstanding course reviews. Delegates to `services/pending_review_notifications.py`.
