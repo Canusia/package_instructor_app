@@ -1,3 +1,4 @@
+from django.utils.html import format_html
 import logging
 from django.conf import settings
 
@@ -326,7 +327,9 @@ def teacher_application_note_added(sender, instance, created, **kwargs):
             alert.alert_type = 'si_app_note_response'
             alert.recipient = parent_note.createdby
             link = str(instance.teacher_application.ce_url) + '#notes'
-            alert.message = f'<a class="display_in_modal" href="{link}">New note added by {instance.createdby}'
+            alert.message = format_html(
+                '<a class="display_in_modal" href="{}">New note added by {}</a>',
+                link, instance.createdby)
             alert.save()
         except TeacherApplicationNote.DoesNotExist:
             pass

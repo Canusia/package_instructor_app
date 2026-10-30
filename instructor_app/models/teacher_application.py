@@ -1,3 +1,4 @@
+from django.utils.html import format_html
 import uuid, logging
 
 from django.db import models
@@ -364,7 +365,9 @@ class TeacherApplication(models.Model):
                 alert.alert_type = 'new_si_application_submitted'
                 alert.recipient = course_admin.user
                 link = self.ce_url
-                alert.message = f'<a href="{link}">SI application by {self.user.first_name} for {self.courses} has been marked \'{new_status}\'</a>'
+                alert.message = format_html(
+                    '<a href="{}">SI application by {} for {} has been marked \'{}\'</a>',
+                    link, self.user.first_name, self.courses, new_status)
                 alert.save()
 
                 recipient += [course_admin.user.email]

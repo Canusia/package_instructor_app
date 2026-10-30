@@ -1,3 +1,4 @@
+from django.utils.html import format_html
 import uuid, logging
 
 from django.db import models
@@ -116,7 +117,9 @@ class ApplicantCourseReviewer(models.Model):
                 alert.alert_type = 'si_application_reviewed'
                 alert.recipient = course_admin.user
                 link = app.ce_url
-                alert.message = f'<a href="{link}">{self.reviewer.first_name} has reviewed application submitted by {app.user.first_name} for {app.courses}</a>'
+                alert.message = format_html(
+                    '<a href="{}">{} has reviewed application submitted by {} for {}</a>',
+                    link, self.reviewer.first_name, app.user.first_name, app.courses)
                 alert.save()
 
                 recipient += [course_admin.user.email]
