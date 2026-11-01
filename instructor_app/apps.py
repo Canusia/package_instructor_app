@@ -76,6 +76,7 @@ class InstructorAppConfig(AppConfig):
 
     def ready(self):
         import instructor_app.signals.teacher_applications  # noqa: F401
+        from . import menu  # noqa: F401  sidebar items (cis.menu_registry)
 
 
 class DevInstructorAppConfig(AppConfig):
@@ -152,3 +153,4 @@ class DevInstructorAppConfig(AppConfig):
 
     def ready(self):
         import instructor_app.instructor_app.signals.teacher_applications  # noqa: F401
+        from . import menu  # noqa: F401  sidebar items (cis.menu_registry)
