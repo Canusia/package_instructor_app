@@ -83,14 +83,18 @@ urlpatterns = [
         'teacher_application/delete/course/<uuid:record_id>',
         user_passes_test(user_has_cis_role, login_url='/')(delete_teacher_course),
         name='delete_teacher_course'),
+    # CE only (package-cis#120): the PDF and zip carry private CE notes,
+    # recommendation letters and review fields; reminders, reviewer status and
+    # the edit actions change the application. The CE detail page
+    # (instructor_app/ce/details.html) is their only caller.
     path(
         'teacher_application/download_files/<uuid:record_id>',
-        download_tapp_files,
+        user_passes_test(user_has_cis_role, login_url='/')(download_tapp_files),
         name='download_tapp_files'
     ),
     path(
         'teacher_application/download/<uuid:record_id>',
-        download_tapp,
+        user_passes_test(user_has_cis_role, login_url='/')(download_tapp),
         name='download_tapp'
     ),
     path(
@@ -100,17 +104,17 @@ urlpatterns = [
     ),
     path(
         'teacher_application/remind_reviewer',
-        remind_reviewer,
+        user_passes_test(user_has_cis_role, login_url='/')(remind_reviewer),
         name='remind_reviewer'
     ),
     path(
         'teacher_application/update_reviewer_status',
-        update_reviewer_status,
+        user_passes_test(user_has_cis_role, login_url='/')(update_reviewer_status),
         name='update_reviewer_status'
     ),
     path(
         'teacher_application/<uuid:record_id>/action',
-        do_teacher_app_action,
+        user_passes_test(user_has_cis_role, login_url='/')(do_teacher_app_action),
         name='teacher_app_action'
     ),
     path(
