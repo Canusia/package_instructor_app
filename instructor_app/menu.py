@@ -7,8 +7,9 @@ Orders are the legacy position * 10, or a value between cis's items for an
 entry tenants added later:
 
 - applicant: the whole portal; cis registers `logout` (50). `manage_app` has
-  no url (the application pages pass it as `active_menu`), so it is never
-  drawn as a registry item.
+  no url (the application pages pass it as `active_menu`); as a top-level
+  item with no children it is drawn as a plain label with an empty href,
+  as the legacy menu drew it.
 - ce: `instructors/incomplete_notifications` and
   `instructors/pending_review_notifications`, after cis's `all_applicants`
   (20). `all_applicants` stays cis's id.
