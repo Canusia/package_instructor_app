@@ -3,7 +3,7 @@ import logging
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
-from django.http import JsonResponse, HttpResponse
+from django.http import Http404, JsonResponse, HttpResponse
 from django.urls import reverse_lazy, reverse
 from django.views.decorators.http import require_POST
 
@@ -495,11 +495,28 @@ def add_new_course_reviewer(request):
         })
 
 
+_APPLICANT_NOTE_TYPES = ('to_instructor', 'public')
+
+
 def reply_to_note(request, note_id):
+    """The applicant's reply page for a note thread.
+
+    Open without a login on purpose: the link (TeacherApplicationNote
+    .teacher_reply_url, the thread root) is emailed to the applicant when a
+    'to_instructor' note is added, and the reply is saved as the applicant.
+    The unguessable note UUID is the credential. It serves only threads that
+    were sent to the applicant -- a root or a child note of an
+    applicant-facing type -- never a purely private CE note (package-cis#120,
+    as cis 53325bc). A signed token instead of the bare UUID is a follow-up.
+    """
     note = get_object_or_404(
         TeacherApplicationNote,
         pk=note_id
     )
+    if (((note.meta or {}).get('type') not in _APPLICANT_NOTE_TYPES)
+            and not TeacherApplicationNote.objects.filter(
+                parent=note.id, meta__type__in=_APPLICANT_NOTE_TYPES).exists()):
+        raise Http404
 
     replies = TeacherApplicationNote.objects.filter(
         parent=note.id,
