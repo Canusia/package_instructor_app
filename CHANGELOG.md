@@ -3,6 +3,32 @@
 Releases are tagged `vYYYY.MAJOR.MINOR` on `Canusia/package_instructor_app` and consumed by
 each tenant through the `git+https://…@<tag>` pin in `webapp/requirements.txt`.
 
+## 2026.1.4
+
+### Security
+
+* **CE-only teacher-application downloads and actions (package-cis#120).** Under
+  `/ce/instructor_apps/teacher_application/`, the PDF and zip downloads, reviewer reminders,
+  reviewer status updates and the per-application edit actions checked login only. They now
+  require the CE role, like the rest of the CE namespace. Their only caller is the CE detail
+  page.
+* **Note-reply link serves only applicant threads (package-cis#120).** The emailed reply page
+  (`teacher_application/note/reply/<note_id>`, open without a login) served any note id, so a
+  private CE note thread could be read and replied to. It now 404s unless the thread contains
+  a `to_instructor` or `public` note; replies are still saved as the applicant.
+* **Alert text is escaped (package-cis#122).** Applicant, reviewer and note-author names and
+  course labels in the CE alert links are HTML-escaped; the note-response alert closes its link.
+
+### Added
+
+* Publishes the sidebar items for the applicant, CE, faculty and instructor portals to the cis
+  menu registry (myce_cis v0.1.43a+); on an older cis nothing registers.
+
+### Fixed
+
+* The empty `tests.py` that stopped test discovery is gone; HS-admin and faculty+HS-admin
+  scoping on the application feeds is pinned by tests (package-cis#120).
+
 ## 2026.1.2
 
 ### Changed
