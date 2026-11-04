@@ -1,7 +1,7 @@
 import logging
-import uuid
 
 from django import forms
+from django.db import transaction
 from django.forms import ModelForm
 
 from django_ckeditor_5.widgets import CKEditor5Widget as CKEditorWidget
@@ -9,18 +9,14 @@ from django_ckeditor_5.widgets import CKEditor5Widget as CKEditorWidget
 from cis.models.course import Course, CourseAppRequirement
 from cis.utils import YES_NO_SELECT_OPTIONS
 
+from ..utils import valid_uuids
+
 logger = logging.getLogger(__name__)
 
 
-def _valid_uuids(values):
-    """The entries of ``values`` that parse as UUIDs, as strings."""
-    valid = []
-    for value in values:
-        try:
-            valid.append(str(uuid.UUID(str(value))))
-        except (ValueError, TypeError, AttributeError):
-            continue
-    return valid
+def requirement_label(record):
+    """'<name> - <course>', or just the name when it has no course."""
+    return f'{record.name} - {record.course.name}' if record.course else record.name
 
 
 class CourseAppRequirementForm(ModelForm):
@@ -99,9 +95,10 @@ class UpdateCourseRequirementForm(forms.Form):
         self.fields['action'].initial = kwargs.get('action', 'update_req_status')
 
         if ids:
-            records = CourseAppRequirement.objects.filter(id__in=ids)
+            records = CourseAppRequirement.objects.filter(
+                id__in=valid_uuids(ids)).select_related('course')
             self.fields['ids'].choices = [
-                (r.id, f'{r.name} - {r.course.name}') for r in records
+                (r.id, requirement_label(r)) for r in records
             ]
             self.fields['ids'].initial = ids
         else:
@@ -159,9 +156,10 @@ class DeleteCourseRequirementForm(forms.Form):
         self.fields['action'].initial = kwargs.get('action', 'delete_req')
 
         if ids:
-            records = CourseAppRequirement.objects.filter(id__in=ids)
+            records = CourseAppRequirement.objects.filter(
+                id__in=valid_uuids(ids)).select_related('course')
             self.fields['ids'].choices = [
-                (r.id, f'{r.name} - {r.course.name}') for r in records
+                (r.id, requirement_label(r)) for r in records
             ]
             self.fields['ids'].initial = ids
         else:
@@ -181,14 +179,16 @@ class DeleteCourseRequirementForm(forms.Form):
         deleted, failures = 0, []
         for record_id in self.cleaned_data.get('ids'):
             record = CourseAppRequirement.objects.filter(
-                id__in=_valid_uuids([record_id])).select_related('course').first()
+                id__in=valid_uuids([record_id])).select_related('course').first()
             if record is None:
                 failures.append(f'{record_id}: not found (it may already be deleted)')
                 continue
             name, course = record.name, record.course
-            label = f'{name} - {course.name}' if course else name
+            label = requirement_label(record)
             try:
-                record.delete()
+                # Own savepoint, so one failure can't poison the rest.
+                with transaction.atomic():
+                    record.delete()
             except Exception as e:
                 logger.exception('Could not delete course app requirement %s', record_id)
                 failures.append(f'{label}: {e}')

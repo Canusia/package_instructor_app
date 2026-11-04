@@ -1,5 +1,6 @@
 """CE course-requirement bulk actions: Update modal title (#15) and delete
 errors (#17)."""
+import json
 from unittest import mock
 
 from django.contrib.messages.storage.fallback import FallbackStorage
@@ -56,3 +57,24 @@ class CourseRequirementActionTests(TestCase):
             'post', {'ids': [missing_id], 'action': 'delete_req'}))
         self.assertEqual(response.status_code, 400)
         self.assertNotIn(b'Successfully', response.content)
+
+    def test_failure_payload_matches_the_modal_and_is_escaped(self):
+        CourseAppRequirement.objects.filter(pk=self.req.pk).update(name='<b>x</b>')
+        with mock.patch.object(
+                CourseAppRequirement, 'delete', side_effect=RuntimeError('<i>boom</i>')):
+            response = views.delete_req(self._request(
+                'post', {'ids': [str(self.req.id)], 'action': 'delete_req'}))
+        body = json.loads(response.content)
+        message = json.loads(body['errors'])['__all__'][0]['message']
+        self.assertIn('&lt;b&gt;x&lt;/b&gt;', message)
+        self.assertIn('&lt;i&gt;boom&lt;/i&gt;', message)
+        self.assertNotIn('<b>', message)
+
+    def test_delete_modal_opens_for_a_requirement_without_a_course(self):
+        orphan = CourseAppRequirement.objects.create(course=None, name='Photo ID')
+        for view in (views.delete_req, views.update_req_status):
+            request = self._request('get', {'ids[]': [str(orphan.id), 'junk']})
+            with mock.patch.object(views, 'render', return_value=mock.sentinel.page) as render:
+                view(request)
+            labels = [label for _v, label in render.call_args.args[2]['form'].fields['ids'].choices]
+            self.assertEqual(labels, ['Photo ID'])

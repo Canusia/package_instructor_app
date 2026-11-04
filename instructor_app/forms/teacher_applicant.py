@@ -27,6 +27,7 @@ from ..models.teacher_applicant import (
 
 # Application notes live in the package's own table only (#11).
 from ..models.teacher_application_note import TeacherApplicationNote
+from ..utils import valid_uuids
 
 from ..services.applicant_eligibility import (
     existing_user_may_apply,
@@ -138,18 +139,6 @@ class MigrateForm(forms.Form):
 
         return (success, message)
     
-def _valid_uuids(values):
-    """The entries of ``values`` that parse as UUIDs, as strings."""
-    import uuid
-    valid = []
-    for value in values:
-        try:
-            valid.append(str(uuid.UUID(str(value))))
-        except (ValueError, TypeError, AttributeError):
-            continue
-    return valid
-
-
 class EditTeacherAppCourseUploadForm(forms.Form):
     
     id = forms.CharField(
@@ -171,7 +160,8 @@ class EditTeacherAppCourseUploadForm(forms.Form):
 
     def __init__(self, teacher_application=None, upload_id=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        
+
+        self.teacher_application = teacher_application
         self.fields['id'].initial = upload_id
 
         interested_courses = ApplicantSchoolCourse.objects.filter(
@@ -181,21 +171,35 @@ class EditTeacherAppCourseUploadForm(forms.Form):
         # Inactive requirements are not offered (#17), except ones this upload
         # is already tagged with, so re-saving it keeps its history valid.
         current = []
-        if upload_id and _valid_uuids([upload_id]):
-            upload = ApplicationUpload.objects.filter(pk=upload_id).first()
-            current = [str(i) for i in (upload.associated_with or [])] if upload else []
+        upload = self._upload(upload_id)
+        if upload:
+            current = [str(i) for i in (upload.associated_with or [])]
         course_reqs = CourseAppRequirement.objects.filter(
             course__id__in=interested_courses
-        ).filter(Q(status='Active') | Q(id__in=_valid_uuids(current)))
+        ).filter(Q(status='Active') | Q(id__in=valid_uuids(current)))
         req_list = []
         for req in course_reqs:
             req_list.append((str(req.id), f'{req.name} for {req.course.name}'))
         self.fields['associated_with'].choices = req_list
 
+    def _upload(self, upload_id):
+        """The upload with ``upload_id`` on this form's application, or None."""
+        if not upload_id or not valid_uuids([upload_id]):
+            return None
+        return ApplicationUpload.objects.filter(
+            pk=upload_id, teacher_application=self.teacher_application).first()
+
+    def clean_id(self):
+        upload = self._upload(self.cleaned_data.get('id'))
+        if upload is None:
+            raise ValidationError('Upload not found on this application.')
+        self.upload = upload
+        return str(upload.pk)
+
     def save(self, teacher_application):
         data = self.cleaned_data
 
-        record = ApplicationUpload.objects.get(pk=data.get('id'))
+        record = self.upload
         record.associated_with = data.get('associated_with')
         record.save()
 
@@ -536,6 +540,8 @@ class AppUploadForm(forms.ModelForm):
             else:
                 label = f'{req.name}'
             req_list.append((str(req.id), label))
+        # Nothing to tag (e.g. every requirement Inactive): don't block the page.
+        self.fields['associated_with'].required = bool(req_list)
         self.fields['associated_with'].choices = req_list
 
     def save(self, commit=False):

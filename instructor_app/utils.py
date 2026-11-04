@@ -1,3 +1,5 @@
+import uuid
+
 from django.shortcuts import get_object_or_404
 
 from cis.utils import user_has_instructor_role, user_has_highschool_admin_role, user_has_cis_role
@@ -28,3 +30,14 @@ def get_teacher_application(request, record_id):
     if user_has_instructor_role(request.user) or user_has_highschool_admin_role(request.user):
         return get_object_or_404(TeacherApplication, pk=record_id)
     return get_object_or_404(TeacherApplication, pk=record_id, user=request.user)
+
+
+def valid_uuids(values):
+    """The entries of ``values`` that parse as UUIDs, as strings."""
+    valid = []
+    for value in values:
+        try:
+            valid.append(str(uuid.UUID(str(value))))
+        except (ValueError, TypeError, AttributeError):
+            continue
+    return valid

@@ -35,10 +35,11 @@ setInterval(function () {
 }, 5000 * 60);
 
 function refreshTable() {
-    table_all.ajax.reload();
-    table_active.ajax.reload();
-    table_reviewer.ajax.reload();
-    table_pending.ajax.reload();
+    // Keep each table on its current page.
+    table_all.ajax.reload(null, false);
+    table_active.ajax.reload(null, false);
+    table_reviewer.ajax.reload(null, false);
+    table_pending.ajax.reload(null, false);
 }
 
 function do_bulk_action(action, dt) {
