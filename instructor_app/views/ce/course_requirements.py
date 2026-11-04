@@ -1,4 +1,7 @@
+import json
+
 from django.shortcuts import get_object_or_404, render
+from django.utils.html import escape
 from django.http import JsonResponse
 from django.urls import reverse
 
@@ -111,7 +114,7 @@ def update_req_status(request):
     ids = request.GET.getlist('ids[]')
     form = UpdateCourseRequirementForm(ids)
     context = {
-        'title': 'Change New School & SI Availability',
+        'title': 'Update Course Application Requirement',
         'form': form
     }
 
@@ -126,11 +129,26 @@ def delete_req(request):
         form = DeleteCourseRequirementForm(data=request.POST)
 
         if form.is_valid():
-            status = form.save(request)
+            deleted, failures = form.save(request)
+
+            if failures:
+                # The modal shows a 400's message plus errors['__all__'].
+                return JsonResponse({
+                    'status': 'error',
+                    'message': (
+                        f'Deleted {deleted} record(s). '
+                        f'{len(failures)} could not be deleted.'
+                    ),
+                    # Its JS shows only the first entry, so join them.
+                    'errors': json.dumps({'__all__': [{
+                        'message': '<br>'.join(escape(f) for f in failures),
+                        'code': 'delete_failed',
+                    }]}),
+                }, status=400)
 
             data = {
                 'status': 'success',
-                'message': 'Successfully updated records',
+                'message': f'Successfully deleted {deleted} record(s)',
                 'action': 'reload_table'
             }
             return JsonResponse(data)

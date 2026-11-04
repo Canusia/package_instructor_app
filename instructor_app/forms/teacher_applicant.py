@@ -138,6 +138,18 @@ class MigrateForm(forms.Form):
 
         return (success, message)
     
+def _valid_uuids(values):
+    """The entries of ``values`` that parse as UUIDs, as strings."""
+    import uuid
+    valid = []
+    for value in values:
+        try:
+            valid.append(str(uuid.UUID(str(value))))
+        except (ValueError, TypeError, AttributeError):
+            continue
+    return valid
+
+
 class EditTeacherAppCourseUploadForm(forms.Form):
     
     id = forms.CharField(
@@ -166,9 +178,15 @@ class EditTeacherAppCourseUploadForm(forms.Form):
             teacherapplication=teacher_application
         ).values_list('course__id', flat=True)
 
+        # Inactive requirements are not offered (#17), except ones this upload
+        # is already tagged with, so re-saving it keeps its history valid.
+        current = []
+        if upload_id and _valid_uuids([upload_id]):
+            upload = ApplicationUpload.objects.filter(pk=upload_id).first()
+            current = [str(i) for i in (upload.associated_with or [])] if upload else []
         course_reqs = CourseAppRequirement.objects.filter(
             course__id__in=interested_courses
-        )
+        ).filter(Q(status='Active') | Q(id__in=_valid_uuids(current)))
         req_list = []
         for req in course_reqs:
             req_list.append((str(req.id), f'{req.name} for {req.course.name}'))
@@ -506,7 +524,7 @@ class AppUploadForm(forms.ModelForm):
         ).values_list('course__id', flat=True)
 
         course_reqs = CourseAppRequirement.objects.filter(
-            course__id__in=interested_courses
+            course__id__in=interested_courses, status='Active',
         ).select_related('course').order_by('course__title', 'course__name', 'name')
 
         req_list = []

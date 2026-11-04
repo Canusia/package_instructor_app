@@ -157,7 +157,7 @@ class TeacherApplication(models.Model):
             teacherapplication=self
         ).values_list('course__id', flat=True)
         file_assoc = CourseAppRequirement.objects.filter(
-            course__id__in=all_reqs
+            course__id__in=all_reqs, status='Active',
         ).select_related('course').order_by('course__name', 'name')
 
         result = '<div class="list-group list-group-flush">'
@@ -584,7 +584,8 @@ class TeacherApplication(models.Model):
 
             return not CourseAppRequirement.objects.filter(
                 course__id__in=selected_courses,
-                required='1'
+                required='1',
+                status='Active',
             ).exclude(
                 id__in=assoc_ids
             ).exists()

@@ -1,3 +1,6 @@
+import logging
+import uuid
+
 from django import forms
 from django.forms import ModelForm
 
@@ -5,6 +8,19 @@ from django_ckeditor_5.widgets import CKEditor5Widget as CKEditorWidget
 
 from cis.models.course import Course, CourseAppRequirement
 from cis.utils import YES_NO_SELECT_OPTIONS
+
+logger = logging.getLogger(__name__)
+
+
+def _valid_uuids(values):
+    """The entries of ``values`` that parse as UUIDs, as strings."""
+    valid = []
+    for value in values:
+        try:
+            valid.append(str(uuid.UUID(str(value))))
+        except (ValueError, TypeError, AttributeError):
+            continue
+    return valid
 
 
 class CourseAppRequirementForm(ModelForm):
@@ -154,19 +170,34 @@ class DeleteCourseRequirementForm(forms.Form):
             ]
 
     def save(self, request=None):
+        """Delete the selected requirements.
+
+        Returns (deleted_count, failures), where failures is a list of
+        human-readable messages, so the view never reports a failed delete as
+        a success (#17).
+        """
         from cis.models.note import CourseNote
 
-        data = self.cleaned_data
-        for record_id in data.get('ids'):
+        deleted, failures = 0, []
+        for record_id in self.cleaned_data.get('ids'):
+            record = CourseAppRequirement.objects.filter(
+                id__in=_valid_uuids([record_id])).select_related('course').first()
+            if record is None:
+                failures.append(f'{record_id}: not found (it may already be deleted)')
+                continue
+            name, course = record.name, record.course
+            label = f'{name} - {course.name}' if course else name
             try:
-                record = CourseAppRequirement.objects.get(id=record_id)
-                name = record.name
-                course = record.course
                 record.delete()
+            except Exception as e:
+                logger.exception('Could not delete course app requirement %s', record_id)
+                failures.append(f'{label}: {e}')
+                continue
+            deleted += 1
+            if course:
                 CourseNote(
                     course=course,
                     createdby=request.user,
                     note=f'Deleted Course App Req: {name}',
                 ).save()
-            except Exception:
-                pass
+        return deleted, failures
