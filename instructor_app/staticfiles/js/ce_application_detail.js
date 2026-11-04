@@ -136,7 +136,11 @@ jQuery(document).ready(function ($) {
         if (response.status != 'success') return;
 
         if (window.frameElement !== null) {
-            // close the modal
+            // Reload the list behind the modal so the deleted row goes (#16).
+            // Guarded: the detail page can be opened from pages without it.
+            if (typeof window.parent.refreshTable === 'function') {
+                window.parent.refreshTable();
+            }
             window.parent.closeModal();
         } else {
             window.location = response.redirect;
