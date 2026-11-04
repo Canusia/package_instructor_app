@@ -30,6 +30,7 @@ from ..forms.teacher_applicant import (
 )
 
 from ..settings.inst_app_language import inst_app_language, get_app_submitted_message
+from ..portal_text import page_intro
 from ..utils import get_teacher_application
 
 from cis.page_messages import get_page_messages
@@ -58,7 +59,7 @@ def manage_password(request):
         'instructor_app/manage_password.html',
         {
             'form': form,
-            'intro': inst_app_language.from_db().get('manage_password_blurb', 'Change me'),
+            'intro': page_intro('manage_password_blurb'),
             'menu': draw_menu(INSTRUCTOR_APP_MENU, 'manage_password', '', 'applicant')
         })
 
@@ -85,7 +86,7 @@ def profile(request):
         'instructor_app/profile.html',
         {
             'form': form,
-            'intro': inst_app_language.from_db().get('profile_blurb', 'Change me'),
+            'intro': page_intro('profile_blurb'),
             'menu': draw_menu(INSTRUCTOR_APP_MENU, 'profile', '', 'applicant')
         })
 
@@ -309,7 +310,7 @@ def dashboard(request):
         {
             'menu': draw_menu(INSTRUCTOR_APP_MENU, 'home', '', 'applicant'),
             'applications': applications,
-            'intro': inst_app_language.from_db().get('dashboard_blurb', 'Change me'),
+            'intro': page_intro('dashboard_blurb'),
             'page_messages': get_page_messages('applicant', 'dashboard', request),
         })
 

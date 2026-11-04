@@ -29,7 +29,7 @@ from ...forms.teacher_applicant import (
     AppUploadForm
 )
 
-from ...portal_text import portal_text
+from ...portal_text import page_intro
 
 from ...settings.inst_app_language import inst_app_language
 
@@ -74,6 +74,6 @@ def index(request):
         {
             'menu': draw_menu(INSTRUCTOR_MENU, 'instructor_apps', '', 'instructor'),
             'applications': applications,
-            'intro': portal_text('instructor').get('instructor_apps_blurb', 'Change me'),
+            'intro': page_intro('instructor_apps_blurb', 'instructor', 'instructor_apps_blurb'),
             'accepting_applications': accepting_applications,
         })

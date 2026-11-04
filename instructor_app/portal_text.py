@@ -22,7 +22,12 @@ PORTAL_TEXT_SOURCES = {
         ('faculty.settings.faculty_portal_text', 'faculty_portal_text'),
         ('cis.settings.faculty_portal', 'faculty_portal'),
     ),
+    'highschool_admin': (
+        ('cis.settings.highschool_admin_portal', 'highschool_admin_portal'),
+    ),
 }
+
+PLACEHOLDERS = {'change me'}
 
 
 def has_module(name):
@@ -40,3 +45,24 @@ def portal_text(role):
             value = getattr(importlib.import_module(module), attr).from_db()
             return value if isinstance(value, dict) else {}
     return {}
+
+
+def _text(value):
+    """``value`` as stripped text, or '' for anything empty or a placeholder."""
+    text = value.strip() if isinstance(value, str) else ''
+    return '' if text.lower() in PLACEHOLDERS else text
+
+
+def page_intro(own_key, role=None, portal_key=None):
+    """The intro for an instructor_app page (#18).
+
+    instructor_app's own ``inst_app_language`` value wins; otherwise the
+    ``role`` portal's ``portal_key`` (where tenants may have set it before);
+    otherwise ''. Never the 'Change me' placeholder.
+    """
+    from .settings.inst_app_language import inst_app_language
+
+    own = _text(inst_app_language.from_db().get(own_key))
+    if own or not role:
+        return own
+    return _text(portal_text(role).get(portal_key or own_key))

@@ -136,6 +136,20 @@ class SettingForm(forms.Form):
         help_text='Displayed above course selection drop down. <a href="#" class="float-right" onClick="do_bulk_action(\'inst_app_language\', \'courses\')" >See Preview</a>',
         label="Course Description Blurb")
 
+    profile_blurb = forms.CharField(
+        max_length=None,
+        required=False,
+        widget=forms.Textarea,
+        help_text='Displayed at the top of the applicant\'s Profile page. Leave blank for no intro.',
+        label="Profile Page Intro.")
+
+    manage_password_blurb = forms.CharField(
+        max_length=None,
+        required=False,
+        widget=forms.Textarea,
+        help_text='Displayed at the top of the applicant\'s Change Password page. Leave blank for no intro.',
+        label="Change Password Page Intro.")
+
     ed_bg_page_header = forms.CharField(
         max_length=None,
         widget=forms.Textarea,
@@ -254,6 +268,41 @@ class SettingForm(forms.Form):
         widget=forms.Textarea,
         help_text='Displayed after teacher details, and before recommendation form. <a href="#" class="float-right" onClick="do_bulk_action(\'inst_app_language\', \'rec_submit_page_header\')" >See Preview</a>',
         label="Rec. Submit Form Intro.")
+
+    other_portals_header = FFields.ReadOnlyField(
+        required=False,
+        label=mark_safe('<h4>Other Portals</h4><p class="text-muted">Intros for the instructor application pages in the instructor, high school admin and faculty portals. Leave blank to use the portal\'s own setting, if any.</p>'),
+        initial='',
+        widget=FFields.LongLabelWidget(attrs={'style': 'display:none;'}),
+    )
+
+    instructor_apps_blurb = forms.CharField(
+        max_length=None,
+        required=False,
+        widget=forms.Textarea,
+        help_text='Displayed at the top of New Instructor Applications in the instructor portal.',
+        label="Instructor Portal — Applications Intro.")
+
+    hs_admin_instructor_apps_blurb = forms.CharField(
+        max_length=None,
+        required=False,
+        widget=forms.Textarea,
+        help_text='Displayed at the top of Instructor Applications in the high school admin portal.',
+        label="High School Admin Portal — Applications Intro.")
+
+    faculty_applications_blurb = forms.CharField(
+        max_length=None,
+        required=False,
+        widget=forms.Textarea,
+        help_text='Displayed at the top of Teacher Applications in the faculty portal.',
+        label="Faculty Portal — Applications Intro.")
+
+    faculty_manage_app_blurb = forms.CharField(
+        max_length=None,
+        required=False,
+        widget=forms.Textarea,
+        help_text='Displayed at the top of the faculty review page for an application.',
+        label="Faculty Portal — Review Page Intro.")
 
     signup_onboarding_header = FFields.ReadOnlyField(
         required=False,
@@ -415,6 +464,12 @@ class SettingForm(forms.Form):
             
             'dashboard_blurb': self.cleaned_data.get('dashboard_blurb'),
             'course_blurb': self.cleaned_data.get('course_blurb'),
+            'profile_blurb': self.cleaned_data.get('profile_blurb', ''),
+            'manage_password_blurb': self.cleaned_data.get('manage_password_blurb', ''),
+            'instructor_apps_blurb': self.cleaned_data.get('instructor_apps_blurb', ''),
+            'hs_admin_instructor_apps_blurb': self.cleaned_data.get('hs_admin_instructor_apps_blurb', ''),
+            'faculty_applications_blurb': self.cleaned_data.get('faculty_applications_blurb', ''),
+            'faculty_manage_app_blurb': self.cleaned_data.get('faculty_manage_app_blurb', ''),
             'rec_req_blurb': self.cleaned_data.get('rec_req_blurb'),
             'rec_req_blurb_bottom': self.cleaned_data.get('rec_req_blurb_bottom'),
             'rec_submit_page_header': self.cleaned_data.get('rec_submit_page_header'),

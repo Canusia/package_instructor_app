@@ -14,7 +14,7 @@ from cis.models.course import Cohort, CourseAdministrator
 from cis.models.faculty import FacultyCoordinator
 from ...models.teacher_application_note import TeacherApplicationNote  # #11
 from cis.menu import draw_menu, FACULTY_MENU
-from ...portal_text import portal_text
+from ...portal_text import page_intro
 
 from ...forms.teacher_applicant import EdBgForm, ApplicantReviewForm
 from ...models.teacher_applicant import (
@@ -48,7 +48,7 @@ def teacher_applications(request):
             'menu': draw_menu(FACULTY_MENU, 'applications', '', 'faculty'),
             'status': app_status,
             'course_status': ApplicantSchoolCourse.STATUS_OPTIONS,
-            'intro': portal_text('faculty').get('applications_blurb', 'Change me'),
+            'intro': page_intro('faculty_applications_blurb', 'faculty', 'applications_blurb'),
             'cohorts': Cohort.objects.filter(
                 pk__in=my_cohort_ids
             ).order_by('designator'),
@@ -183,7 +183,7 @@ def review_application(request, record_id):
         'instructor_app/faculty/review_application.html',
         {
             'menu': menu,
-            'intro': portal_text('faculty').get('manage_app_blurb', 'Change me'),
+            'intro': page_intro('faculty_manage_app_blurb', 'faculty', 'manage_app_blurb'),
             'teacher_application': teacher_application,
             'record': teacher_application,
             'notes': TeacherApplicationNote.objects.filter(

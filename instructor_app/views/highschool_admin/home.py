@@ -30,7 +30,7 @@ from ...forms.teacher_applicant import (
     HSAdminAddTeacherForm,
 )
 
-from cis.settings.highschool_admin_portal import highschool_admin_portal as portal_language
+from ...portal_text import page_intro
 
 def index(request):
     user = request.user
@@ -109,5 +109,5 @@ def index(request):
             'applications': applications,
             'teacher_highschools': teacher_highschools,
             'add_teacher_form': add_teacher_form,
-            'intro': portal_language.from_db().get('instructor_apps_blurb', 'Change me')
+            'intro': page_intro('hs_admin_instructor_apps_blurb', 'highschool_admin', 'instructor_apps_blurb'),
         })
